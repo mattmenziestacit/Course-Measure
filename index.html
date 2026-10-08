@@ -1,0 +1,596 @@
+<!doctype html>
+<html lang="en">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover">
+<meta name="theme-color" content="#1E5A3F">
+<meta name="apple-mobile-web-app-capable" content="yes">
+<meta name="apple-mobile-web-app-title" content="Course Measure">
+<title>Course Measure</title>
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+<link href="https://fonts.googleapis.com/css2?family=Barlow:wght@400;500;600&family=Barlow+Condensed:wght@600;700&display=swap" rel="stylesheet">
+<link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/leaflet/1.9.4/leaflet.min.css">
+<style>
+:root{
+  --bg:#F3F6F4; --surface:#FFFFFF; --ink:#15211B; --muted:#5C6B63; --line:#D6DFDA;
+  --green:#1E5A3F; --green-ink:#FFFFFF; --flag:#F2C230; --flag-ink:#2A2100; --danger:#B3261E; --soft:#E8EFEA;
+}
+@media (prefers-color-scheme: dark){
+  :root{
+    --bg:#0F1713; --surface:#18231D; --ink:#E7EFEA; --muted:#9AAAA1; --line:#2B3A32;
+    --green:#3E9A6C; --green-ink:#06130C; --flag:#F2C230; --flag-ink:#2A2100; --danger:#F2867E; --soft:#1F2C25;
+  }
+}
+*,*::before,*::after{box-sizing:border-box}
+html{-webkit-text-size-adjust:100%}
+body{margin:0;background:var(--bg);color:var(--ink);font:400 16px/1.5 "Barlow",system-ui,-apple-system,"Segoe UI",sans-serif;-webkit-font-smoothing:antialiased;
+  padding:env(safe-area-inset-top,0) env(safe-area-inset-right,0) env(safe-area-inset-bottom,0) env(safe-area-inset-left,0)}
+main{max-width:560px;margin:0 auto;padding:16px 16px 48px}
+h1,h2{font-family:"Barlow Condensed","Arial Narrow",sans-serif;font-weight:700;letter-spacing:.01em}
+h2{font-size:1.2rem;margin:0}
+button{font:inherit;cursor:pointer;color:inherit}
+button:focus-visible,input:focus-visible,select:focus-visible{outline:3px solid var(--flag);outline-offset:2px}
+input,select{font:inherit;color:var(--ink);background:var(--surface);border:1px solid var(--line);border-radius:10px;padding:9px 11px;min-width:0}
+
+.top{display:flex;gap:10px;align-items:center;margin-bottom:10px}
+.top input{flex:1;font-weight:600}
+.seg{display:inline-flex;border:1px solid var(--line);border-radius:999px;overflow:hidden;flex:none;background:var(--surface)}
+.seg button{border:0;background:transparent;padding:6px 12px;font-size:.85rem;font-weight:600}
+.seg button[aria-pressed="true"]{background:var(--ink);color:var(--bg)}
+.settings{display:flex;flex-wrap:wrap;gap:8px 16px;align-items:center;margin:0 0 12px;font-size:.85rem;color:var(--muted)}
+.settings label{display:flex;gap:8px;align-items:center}
+
+.card{background:var(--surface);border:1px solid var(--line);border-radius:16px;padding:14px}
+.holehead{display:grid;grid-template-columns:44px 1fr 44px;align-items:center;gap:8px}
+.nav{width:44px;height:44px;border-radius:12px;border:1px solid var(--line);background:transparent;font-size:1.4rem;line-height:1}
+.nav[disabled]{opacity:.35;cursor:default}
+.hn{text-align:center}
+.hn .big{font-family:"Barlow Condensed",sans-serif;font-weight:700;font-size:2rem;line-height:1}
+.pars{display:flex;justify-content:center;gap:4px;margin-top:4px;align-items:center;color:var(--muted);font-size:.85rem}
+.pars button{border:1px solid var(--line);background:transparent;border-radius:8px;min-width:30px;padding:2px 6px;font-weight:600}
+.pars button[aria-pressed="true"]{background:var(--green);color:var(--green-ink);border-color:var(--green)}
+
+.tees{display:flex;flex-wrap:wrap;gap:6px;margin:14px 0 4px}
+.chip{border:1px solid var(--line);background:transparent;border-radius:999px;padding:5px 12px;font-size:.9rem;font-weight:600}
+.chip[aria-pressed="true"]{background:var(--flag);color:var(--flag-ink);border-color:var(--flag)}
+.chip.ghost{color:var(--muted);font-weight:500}
+
+.len{display:flex;align-items:baseline;gap:8px;margin-top:10px}
+.len .num{font-family:"Barlow Condensed",sans-serif;font-weight:700;font-size:4rem;line-height:1;font-variant-numeric:tabular-nums}
+.len .u{font-family:"Barlow Condensed",sans-serif;font-weight:600;font-size:1.4rem;color:var(--muted)}
+.sub{color:var(--muted);font-size:.88rem}
+
+.steps{list-style:none;margin:14px 0 0;padding:0;display:grid;gap:8px}
+.step{display:grid;grid-template-columns:1fr auto;gap:8px;align-items:center;border:1px solid var(--line);border-radius:12px;padding:10px 12px;background:var(--bg)}
+.step .t{font-weight:600}
+.step .m{color:var(--muted);font-size:.8rem;line-height:1.35;word-break:break-word}
+.step .acts{display:flex;gap:6px;align-items:center}
+.mark{border:0;border-radius:10px;background:var(--green);color:var(--green-ink);padding:10px 14px;font-weight:600;white-space:nowrap}
+.mark.re{background:transparent;color:var(--green);border:1px solid var(--line)}
+.mark.busy{background:var(--flag);color:var(--flag-ink)}
+.x{border:0;background:transparent;color:var(--muted);padding:6px;border-radius:8px}
+.x:hover{color:var(--danger)}
+.x svg{width:18px;height:18px;display:block}
+.add{border:1px dashed var(--line);background:transparent;border-radius:12px;padding:10px;color:var(--muted);font-weight:600;width:100%}
+.add.busy{background:var(--flag);color:var(--flag-ink);border-style:solid;border-color:var(--flag)}
+
+.status{min-height:1.5em;margin:10px 2px 0;font-size:.9rem;color:var(--muted)}
+.status.err{color:var(--danger)}
+
+.mapcard{margin-top:12px;padding:0;overflow:hidden}
+.maptools{display:flex;flex-wrap:wrap;gap:6px;align-items:center;padding:10px 12px}
+.maptools .lbl{font-size:.85rem;color:var(--muted);margin-right:2px}
+.maptools .chip{font-size:.85rem;padding:4px 10px}
+.maptools .right{margin-left:auto;display:flex;gap:6px}
+#map{height:340px;width:100%;background:#2b3a32}
+.maphint{font-size:.8rem;color:var(--muted);padding:8px 12px 10px;margin:0}
+.pin{width:30px;height:30px;border-radius:50%;display:grid;place-items:center;font:700 13px/1 "Barlow Condensed",sans-serif;border:2px solid #fff;box-shadow:0 1px 4px rgba(0,0,0,.5);color:#fff}
+.pin.tee{background:#1E5A3F}
+.pin.tee.other{background:#5C6B63;opacity:.75;width:22px;height:22px;font-size:11px}
+.pin.way{background:#2F6FB3}
+.pin.green{background:#F2C230;color:#2A2100}
+.pin.me{background:#2F6FB3;width:16px;height:16px;border-width:3px}
+
+details{margin-top:10px}
+summary{color:var(--muted);font-size:.9rem;cursor:pointer;padding:4px 2px}
+.row{display:flex;gap:8px;margin-top:8px;flex-wrap:wrap}
+.row input{flex:1 1 180px}
+.btn{border:1px solid var(--line);background:var(--surface);border-radius:10px;padding:9px 14px;font-weight:600}
+.btn.sm{padding:4px 10px;font-size:.85rem;border-radius:999px}
+.btn.danger{color:var(--danger)}
+
+.grid{display:grid;grid-template-columns:repeat(9,1fr);gap:6px;margin:18px 0 0}
+.grid button{aspect-ratio:1;border:1px solid var(--line);background:var(--surface);border-radius:10px;font-weight:600;font-size:.9rem;padding:0}
+.grid button.done{background:var(--soft);border-color:var(--green);color:var(--green)}
+.grid button.cur{outline:3px solid var(--flag);outline-offset:1px}
+
+.sc{margin-top:24px}
+.sc h2{margin-bottom:8px}
+.tablewrap{overflow-x:auto;border:1px solid var(--line);border-radius:12px;background:var(--surface)}
+table{border-collapse:collapse;width:100%;font-size:.9rem;font-variant-numeric:tabular-nums}
+th,td{padding:7px 10px;text-align:right;border-bottom:1px solid var(--line);white-space:nowrap}
+th:first-child,td:first-child{text-align:left}
+thead th{font-family:"Barlow Condensed",sans-serif;font-size:1rem;color:var(--muted);font-weight:700}
+tbody tr.h{cursor:pointer}
+tbody tr.h.cur td{background:var(--soft)}
+tr.tot td{font-weight:700;background:var(--bg)}
+tr:last-child td{border-bottom:0}
+.note{color:var(--muted);font-size:.8rem;margin:6px 2px 0}
+.tools{display:flex;flex-wrap:wrap;gap:8px;margin-top:18px}
+.foot{margin-top:18px;color:var(--muted);font-size:.8rem}
+.foot p{margin:0 0 6px}
+</style>
+</head>
+<body>
+<main>
+  <div class="top">
+    <input id="course" placeholder="Course name" aria-label="Course name" maxlength="80">
+    <div class="seg" id="units" role="group" aria-label="Units">
+      <button type="button" data-unit="yd">yd</button><button type="button" data-unit="m">m</button>
+    </div>
+  </div>
+  <div class="settings">
+    <label>GPS fix <span class="seg" role="group" aria-label="GPS fix length">
+      <button type="button" data-fix="quick">Quick</button><button type="button" data-fix="long">Long 45s</button></span></label>
+    <label>Re-mark <span class="seg" role="group" aria-label="When re-marking">
+      <button type="button" data-remark="replace">Replace</button><button type="button" data-remark="avg">Average</button></span></label>
+  </div>
+
+  <section class="card" id="hole"></section>
+  <p class="status" id="status" role="status" aria-live="polite"></p>
+
+  <section class="card mapcard">
+    <div class="maptools" id="maptools"></div>
+    <div id="map" role="application" aria-label="Satellite map of this hole"></div>
+    <p class="maphint" id="maphint">Drag a pin to line it up exactly with the tee markers or the middle of the green.</p>
+  </section>
+
+  <details id="manual">
+    <summary>Enter coordinates instead of using GPS</summary>
+    <div class="row">
+      <select id="manTarget" aria-label="Point to set"></select>
+      <input id="manIn" placeholder="51.50070, -0.12460 or a Google Maps link" autocomplete="off">
+      <button class="btn" id="manBtn" type="button">Set</button>
+    </div>
+  </details>
+
+  <div class="grid" id="grid" aria-label="Holes"></div>
+
+  <section class="sc">
+    <h2>Scorecard</h2>
+    <div class="tablewrap"><table id="card"></table></div>
+    <p class="note" id="cardnote"></p>
+  </section>
+
+  <div class="tools">
+    <button class="btn" type="button" id="csvBtn">Export CSV</button>
+    <button class="btn" type="button" id="bakBtn">Back up</button>
+    <button class="btn" type="button" id="resBtn">Restore</button>
+    <button class="btn danger" type="button" id="newBtn">New course</button>
+    <input type="file" id="resFile" accept="application/json,.json" hidden>
+  </div>
+  <div class="foot">
+    <p>Mark each tee, any dogleg turning points along the line of play, then the centre of the green. Lengths run tee → dogleg points → green centre, measured flat.</p>
+    <p>For best accuracy: turn on Precise Location, use a Long fix standing still in the open, set Re-mark to Average and mark each point again on a second visit, then drag the pins onto the exact spot on the satellite map.</p>
+    <p>Data is saved on this device only, so use Back up to keep a copy.</p>
+  </div>
+</main>
+
+<script src="https://cdnjs.cloudflare.com/ajax/libs/leaflet/1.9.4/leaflet.min.js"></script>
+<script>
+(function(){
+  'use strict';
+  const $ = s => document.querySelector(s);
+  const KEY = 'course-measure-v1';
+  const F = { yd: 1.0936133, m: 1 };
+  const ICON_X = '<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M4 7h16M10 11v6M14 11v6M6 7l1 13h10l1-13M9 7V4h6v3"/></svg>';
+  const LONG_MS = 45000;
+
+  function blankHoles(){ return Array.from({length:18}, () => ({ par:4, tees:{}, way:[], green:null })); }
+  function fresh(){ return { course:'', unit:'yd', fix:'quick', remark:'replace', tees:['White','Yellow','Red'], tee:'White', hole:0, holes:blankHoles() }; }
+  function valid(s){ return s && Array.isArray(s.holes) && s.holes.length === 18 && Array.isArray(s.tees) && s.tees.length; }
+  function normalise(s){ if (!s.tees.includes(s.tee)) s.tee = s.tees[0]; s.fix = s.fix || 'quick'; s.remark = s.remark || 'replace'; return s; }
+  let S;
+  try { S = JSON.parse(localStorage.getItem(KEY) || 'null'); } catch(e){ S = null; }
+  S = valid(S) ? normalise(S) : fresh();
+  function save(){ try { localStorage.setItem(KEY, JSON.stringify(S)); } catch(e){ setStatus('Could not save on this device (storage blocked or full).', true); } }
+
+  // ---------- geometry ----------
+  function hav(a, b){
+    const R = 6371008.8, r = x => x * Math.PI / 180;
+    const dLat = r(b.lat - a.lat), dLng = r(b.lng - a.lng);
+    const h = Math.sin(dLat/2)**2 + Math.cos(r(a.lat))*Math.cos(r(b.lat))*Math.sin(dLng/2)**2;
+    return 2 * R * Math.asin(Math.min(1, Math.sqrt(h)));
+  }
+  function route(h, tee){ const t = h.tees[tee]; return (t && h.green) ? [t, ...h.way, h.green] : null; }
+  function holeLen(h, tee){
+    const pts = route(h, tee); if (!pts) return null;
+    let d = 0; for (let i = 1; i < pts.length; i++) d += hav(pts[i-1], pts[i]);
+    return d;
+  }
+  const fmt = (m, u) => m == null ? '–' : Math.round(m * F[u || S.unit]).toLocaleString();
+  const esc = s => String(s).replace(/[&<>"']/g, c => ({'&':'&amp;','<':'&lt;','>':'&gt;','"':'&quot;',"'":'&#39;'}[c]));
+  function describe(p){
+    let s = p.lat.toFixed(6) + ', ' + p.lng.toFixed(6);
+    if (p.src === 'map') s += ' · placed on map';
+    else if (p.src === 'manual') s += ' · entered';
+    else if (p.acc != null) s += ' · ±' + Math.round(p.acc) + ' m';
+    if (p.visits && p.visits.length > 1 && p.src !== 'map') s += ' · ' + p.visits.length + ' visits averaged';
+    return s;
+  }
+  function setStatus(msg, err){ const s = $('#status'); s.textContent = msg || ''; s.classList.toggle('err', !!err); }
+
+  // ---------- points ----------
+  function label(t){ return t.kind === 'tee' ? t.tee + ' tee' : t.kind === 'green' ? 'Green centre' : (t.i == null ? 'Dogleg point' : 'Dogleg point ' + (t.i + 1)); }
+  function getPoint(h, t){ return t.kind === 'tee' ? h.tees[t.tee] : t.kind === 'green' ? h.green : (t.i == null ? null : h.way[t.i]); }
+  function putPoint(h, t, p){
+    if (t.kind === 'tee') h.tees[t.tee] = p;
+    else if (t.kind === 'green') h.green = p;
+    else if (t.i == null) h.way.push(p); else h.way[t.i] = p;
+  }
+  function combineVisits(visits){
+    let w = 0, lat = 0, lng = 0;
+    for (const v of visits) { const k = 1 / Math.max(v.acc || 5, 1) ** 2; w += k; lat += v.lat * k; lng += v.lng * k; }
+    return { lat: lat / w, lng: lng / w, acc: Math.round(10 / Math.sqrt(w)) / 10 };
+  }
+  // GPS result → store, averaging with an earlier GPS visit if that setting is on
+  function storeGps(hi, t, fix){
+    const h = S.holes[hi], old = getPoint(h, t);
+    let p, averaged = false;
+    if (S.remark === 'avg' && old && old.src !== 'map' && old.src !== 'manual') {
+      const visits = (old.visits && old.visits.length ? old.visits : [{ lat: old.lat, lng: old.lng, acc: old.acc, t: old.t }]).concat([fix]);
+      p = Object.assign(combineVisits(visits), { src: 'gps', visits, t: Date.now() });
+      averaged = true;
+    } else {
+      p = { lat: fix.lat, lng: fix.lng, acc: fix.acc, src: 'gps', visits: [fix], t: Date.now() };
+    }
+    putPoint(h, t, p); save(); render(true);
+    return { p, averaged, replacedMap: old && old.src === 'map' };
+  }
+
+  // ---------- GPS capture (averaged) ----------
+  let cap = null; // {id, timer, tick, key}
+  let wakeLock = null;
+  const targetKey = t => t.kind + ':' + (t.kind === 'tee' ? t.tee : t.kind === 'way' ? (t.i ?? 'new') : '');
+  async function wakeOn(){ try { if ('wakeLock' in navigator) wakeLock = await navigator.wakeLock.request('screen'); } catch(e){} }
+  function wakeOff(){ try { wakeLock && wakeLock.release(); } catch(e){} wakeLock = null; }
+
+  function stopCap(){
+    if (!cap) return;
+    navigator.geolocation.clearWatch(cap.id); clearTimeout(cap.timer); clearInterval(cap.tick);
+    cap = null; wakeOff();
+  }
+
+  function capture(target){
+    if (cap) { const same = cap.key === targetKey(target); stopCap(); render(); if (same) { setStatus('Cancelled.'); return; } }
+    if (!window.isSecureContext) { setStatus('Location only works on a secure (https://) page. Open this from its hosted web address.', true); return; }
+    if (!('geolocation' in navigator)) { setStatus('This browser can\'t share your location. Use the map or "Enter coordinates" below.', true); return; }
+    const holeIdx = S.hole, samples = [], start = Date.now(), long = S.fix === 'long';
+    let done = false;
+    const best = () => Math.min(...samples.map(c => c.accuracy));
+    const progress = () => {
+      if (!samples.length) { setStatus((long ? 'Long fix: ' + Math.ceil((LONG_MS - (Date.now() - start)) / 1000) + ' s left. ' : '') + 'Waiting for GPS… hold still.'); return; }
+      const lead = long ? 'Long fix: ' + Math.max(0, Math.ceil((LONG_MS - (Date.now() - start)) / 1000)) + ' s left · ' : 'Getting a fix… ';
+      setStatus(lead + samples.length + ' reading' + (samples.length > 1 ? 's' : '') + ', best ±' + Math.round(best()) + ' m. Hold still.');
+    };
+    const finish = () => {
+      if (done) return; done = true; stopCap();
+      if (!samples.length) { setStatus('No GPS fix. Step into the open and try again.', true); render(); return; }
+      const b = best();
+      const use = samples.filter(c => c.accuracy <= Math.max(b * 2, b + 3));
+      let w = 0, lat = 0, lng = 0;
+      for (const c of use) { const k = 1 / Math.max(c.accuracy, 1) ** 2; w += k; lat += c.latitude * k; lng += c.longitude * k; }
+      const fix = { lat: lat / w, lng: lng / w, acc: Math.round(b * 10) / 10, n: use.length, t: Date.now() };
+      const r = storeGps(holeIdx, target, fix);
+      let msg = label(target) + (r.averaged ? ' averaged over ' + r.p.visits.length + ' visits' : ' marked') + ' on hole ' + (holeIdx + 1) + ' (' + use.length + ' readings, ±' + Math.round(b) + ' m this visit).';
+      if (r.replacedMap) msg += ' This replaced a pin you had placed on the map.';
+      if (b > 10) msg += ' Accuracy is low: wait in the open and re-mark.';
+      setStatus(msg);
+    };
+    const id = navigator.geolocation.watchPosition(pos => {
+      samples.push(pos.coords); progress();
+      if (!long) {
+        const good = samples.filter(c => c.accuracy <= 5).length;
+        if (good >= 4 || (Date.now() - start > 8000 && samples.length >= 3)) finish();
+      }
+    }, err => {
+      if (done) return; done = true; stopCap();
+      setStatus(err.code === 1
+        ? 'Location access is blocked. Allow location for this site in your browser/phone settings, then try again.'
+        : 'Location isn\'t available right now. Step into the open and try again.', true);
+      render();
+    }, { enableHighAccuracy: true, maximumAge: 0, timeout: long ? LONG_MS + 15000 : 30000 });
+    cap = { id, key: targetKey(target), timer: setTimeout(finish, long ? LONG_MS : 15000), tick: setInterval(progress, 1000) };
+    wakeOn(); progress(); render();
+  }
+
+  // ---------- map ----------
+  let map = null, layer = null, meLayer = null, armed = null, fittedFor = '';
+  function initMap(){
+    if (!window.L) { $('#map').style.display = 'none'; $('#maphint').textContent = 'The map couldn\'t load (no internet connection?). GPS marking still works.'; return; }
+    map = L.map('map', { maxZoom: 21, zoomSnap: 0.5, tap: true });
+    const sat = L.tileLayer('https://server.arcgisonline.com/ArcGIS/rest/services/World_Imagery/MapServer/tile/{z}/{y}/{x}',
+      { maxZoom: 21, maxNativeZoom: 19, attribution: 'Imagery © Esri, Maxar, Earthstar Geographics' });
+    const osm = L.tileLayer('https://tile.openstreetmap.org/{z}/{x}/{y}.png',
+      { maxZoom: 21, maxNativeZoom: 19, attribution: '© OpenStreetMap contributors' });
+    sat.addTo(map);
+    L.control.layers({ 'Satellite': sat, 'Map': osm }, null, { position: 'topright' }).addTo(map);
+    L.control.scale({ imperial: true, metric: true, position: 'topleft' }).addTo(map);
+    layer = L.layerGroup().addTo(map);
+    meLayer = L.layerGroup().addTo(map);
+    map.setView([20, 0], 2);
+    map.on('click', e => {
+      if (!armed) return;
+      const t = armed; armed = null;
+      const h = S.holes[S.hole];
+      putPoint(h, t, { lat: e.latlng.lat, lng: e.latlng.lng, acc: null, src: 'map', t: Date.now() });
+      save(); render(true);
+      setStatus(label(t) + ' placed on the map for hole ' + (S.hole + 1) + '. Drag it to fine-tune.');
+    });
+  }
+  const pinIcon = (cls, txt) => L.divIcon({ className: '', html: `<div class="pin ${cls}">${txt}</div>`, iconSize: [30, 30], iconAnchor: [15, 15] });
+
+  function holePoints(h){
+    const pts = [];
+    S.tees.forEach(t => { if (h.tees[t]) pts.push(h.tees[t]); });
+    h.way.forEach(p => pts.push(p));
+    if (h.green) pts.push(h.green);
+    return pts;
+  }
+  function fitMap(force){
+    if (!map) return;
+    const pts = holePoints(S.holes[S.hole]);
+    const key = S.hole + '|' + S.tee + '|' + Math.min(pts.length, 2);
+    if (!force && fittedFor === key) return;
+    if (pts.length >= 2) { map.fitBounds(L.latLngBounds(pts.map(p => [p.lat, p.lng])), { padding: [40, 40], maxZoom: 19 }); fittedFor = key; return; }
+    if (pts.length === 1) { map.setView([pts[0].lat, pts[0].lng], 18); fittedFor = key; return; }
+    // nothing on this hole yet: start from the nearest hole that has points
+    for (let d = 1; d < 18; d++) for (const j of [S.hole - d, S.hole + d]) {
+      if (j < 0 || j > 17) continue;
+      const q = holePoints(S.holes[j]); if (q.length) { const p = S.holes[j].green || q[q.length - 1]; map.setView([p.lat, p.lng], 17); fittedFor = key; return; }
+    }
+  }
+  function drawMap(){
+    if (!map) return;
+    layer.clearLayers();
+    const h = S.holes[S.hole];
+    const addPin = (p, cls, txt, t, draggable) => {
+      if (p.src === 'gps' && p.acc) L.circle([p.lat, p.lng], { radius: p.acc, color: '#fff', weight: 1, opacity: .6, fillOpacity: .08, interactive: false }).addTo(layer);
+      const m = L.marker([p.lat, p.lng], { icon: pinIcon(cls, txt), draggable, keyboard: false, title: label(t), zIndexOffset: draggable ? 500 : 0 }).addTo(layer);
+      if (draggable) m.on('dragend', () => {
+        const ll = m.getLatLng(), old = getPoint(h, t);
+        putPoint(h, t, { lat: ll.lat, lng: ll.lng, acc: null, src: 'map', gps: old && old.src === 'gps' ? { lat: old.lat, lng: old.lng, acc: old.acc } : (old && old.gps) || null, t: Date.now() });
+        save(); render(true);
+        setStatus(label(t) + ' moved on the map. New length uses the adjusted position.');
+      });
+    };
+    S.tees.forEach(name => { if (name !== S.tee && h.tees[name]) addPin(h.tees[name], 'tee other', esc(name[0] || 'T'), { kind: 'tee', tee: name }, false); });
+    const r = route(h, S.tee);
+    const line = [h.tees[S.tee], ...h.way, h.green].filter(Boolean);
+    if (line.length >= 2) L.polyline(line.map(p => [p.lat, p.lng]), { color: '#F2C230', weight: 3, dashArray: r ? null : '6 6', interactive: false }).addTo(layer);
+    if (h.tees[S.tee]) addPin(h.tees[S.tee], 'tee', 'T', { kind: 'tee', tee: S.tee }, true);
+    h.way.forEach((p, i) => addPin(p, 'way', i + 1, { kind: 'way', i }, true));
+    if (h.green) addPin(h.green, 'green', 'G', { kind: 'green' }, true);
+  }
+  function renderMapTools(){
+    const h = S.holes[S.hole];
+    const chip = (t, txt) => `<button type="button" class="chip" data-act="arm" data-t='${esc(JSON.stringify(t))}' aria-pressed="${!!armed && targetKey(armed) === targetKey(t)}">${txt}</button>`;
+    $('#maptools').innerHTML = `<span class="lbl">Tap map to place:</span>
+      ${chip({kind:'tee', tee:S.tee}, esc(S.tee) + ' tee')}${chip({kind:'way'}, '+ Dogleg')}${chip({kind:'green'}, 'Green')}
+      <span class="right"><button type="button" class="btn sm" data-act="fit">Fit hole</button><button type="button" class="btn sm" data-act="me">Me</button></span>`;
+    $('#maphint').textContent = armed
+      ? 'Now tap the map where the ' + label(armed).toLowerCase().replace(/ \d+$/, '') + ' should go.'
+      : (holePoints(h).length ? 'Drag a pin to line it up exactly with the tee markers or the middle of the green. Zoom right in for precision.' : 'Mark points with GPS above, or tap a button here and then tap the map.');
+  }
+  function showMe(){
+    if (!map) return;
+    if (!navigator.geolocation || !window.isSecureContext) { setStatus('Location isn\'t available on this page.', true); return; }
+    setStatus('Finding you…');
+    navigator.geolocation.getCurrentPosition(pos => {
+      const { latitude: lat, longitude: lng, accuracy } = pos.coords;
+      meLayer.clearLayers();
+      L.circle([lat, lng], { radius: accuracy, color: '#2F6FB3', weight: 1, fillOpacity: .12, interactive: false }).addTo(meLayer);
+      L.marker([lat, lng], { icon: L.divIcon({ className: '', html: '<div class="pin me"></div>', iconSize: [16, 16], iconAnchor: [8, 8] }), interactive: false }).addTo(meLayer);
+      map.setView([lat, lng], Math.max(map.getZoom(), 18));
+      setStatus('You are here, ±' + Math.round(accuracy) + ' m.');
+    }, err => setStatus(err.code === 1 ? 'Location access is blocked for this site.' : 'Couldn\'t get your location.', true),
+    { enableHighAccuracy: true, timeout: 20000, maximumAge: 5000 });
+  }
+
+  // ---------- render ----------
+  function render(keepView){
+    const h = S.holes[S.hole];
+    $('#course').value = S.course;
+    document.querySelectorAll('[data-unit]').forEach(b => b.setAttribute('aria-pressed', b.dataset.unit === S.unit));
+    document.querySelectorAll('[data-fix]').forEach(b => b.setAttribute('aria-pressed', b.dataset.fix === S.fix));
+    document.querySelectorAll('[data-remark]').forEach(b => b.setAttribute('aria-pressed', b.dataset.remark === S.remark));
+
+    const len = holeLen(h, S.tee);
+    const others = S.tees.filter(t => t !== S.tee).map(t => { const d = holeLen(h, t); return d == null ? null : esc(t) + ' ' + fmt(d); }).filter(Boolean);
+    const r = route(h, S.tee) || [];
+    const gpsPts = r.filter(p => p.src === 'gps' && p.acc != null);
+    const mapPts = r.filter(p => p.src === 'map').length;
+    let quality = '';
+    if (r.length) {
+      if (mapPts === r.length) quality = ' · all points placed on map';
+      else if (gpsPts.length) quality = ' · GPS margin up to ±' + Math.round(gpsPts.reduce((a, p) => a + p.acc, 0)) + ' m' + (mapPts ? ' (' + mapPts + ' map-adjusted)' : '');
+    }
+    const isBusy = t => cap && cap.key === targetKey(t);
+    const markBtn = (t, has, text) => {
+      const busy = isBusy(t);
+      const re = S.remark === 'avg' ? '+ Visit' : 'Re-mark';
+      return `<button type="button" class="mark ${busy ? 'busy' : has ? 're' : ''}" data-act="mark" data-t='${esc(JSON.stringify(t))}'>${busy ? 'Cancel' : has ? re : text}</button>`;
+    };
+    const clrBtn = t => `<button type="button" class="x" data-act="clr" data-t='${esc(JSON.stringify(t))}' aria-label="Clear ${esc(label(t))}">${ICON_X}</button>`;
+    const tee = h.tees[S.tee];
+    let steps = `<li class="step"><div><div class="t">${esc(S.tee)} tee</div><div class="m">${tee ? describe(tee) : 'Stand at the centre of the tee markers'}</div></div>
+      <div class="acts">${tee ? clrBtn({kind:'tee', tee:S.tee}) : ''}${markBtn({kind:'tee', tee:S.tee}, !!tee, 'Mark tee')}</div></li>`;
+    h.way.forEach((p, i) => {
+      steps += `<li class="step"><div><div class="t">Dogleg point ${i+1}</div><div class="m">${describe(p)}</div></div>
+        <div class="acts">${clrBtn({kind:'way', i})}${markBtn({kind:'way', i}, true)}</div></li>`;
+    });
+    const addBusy = isBusy({kind:'way'});
+    steps += `<li><button type="button" class="add ${addBusy ? 'busy' : ''}" data-act="mark" data-t='${esc(JSON.stringify({kind:'way'}))}'>${addBusy ? 'Cancel' : '+ Add dogleg point where I’m standing'}</button></li>`;
+    steps += `<li class="step"><div><div class="t">Green centre</div><div class="m">${h.green ? describe(h.green) : 'Stand in the middle of the green'}</div></div>
+      <div class="acts">${h.green ? clrBtn({kind:'green'}) : ''}${markBtn({kind:'green'}, !!h.green, 'Mark green')}</div></li>`;
+
+    $('#hole').innerHTML = `
+      <div class="holehead">
+        <button type="button" class="nav" data-act="prev" aria-label="Previous hole" ${S.hole === 0 ? 'disabled' : ''}>‹</button>
+        <div class="hn"><div class="big">Hole ${S.hole + 1}</div>
+          <div class="pars">Par ${[3,4,5,6].map(p => `<button type="button" data-act="par" data-v="${p}" aria-pressed="${h.par === p}">${p}</button>`).join('')}</div></div>
+        <button type="button" class="nav" data-act="next" aria-label="Next hole" ${S.hole === 17 ? 'disabled' : ''}>›</button>
+      </div>
+      <div class="tees" role="group" aria-label="Tee">${S.tees.map(t => `<button type="button" class="chip" data-act="tee" data-v="${esc(t)}" aria-pressed="${t === S.tee}">${esc(t)}</button>`).join('')}
+        <button type="button" class="chip ghost" data-act="editTees">Edit tees</button></div>
+      <div class="len"><span class="num">${fmt(len)}</span><span class="u">${S.unit}</span></div>
+      <div class="sub">${len == null ? 'Mark the ' + esc(S.tee) + ' tee and the green centre to get a length.' :
+        esc(S.tee) + ' tee to green centre' + (h.way.length ? ' via ' + h.way.length + ' dogleg point' + (h.way.length > 1 ? 's' : '') : '') +
+        ' · ' + fmt(len, S.unit === 'yd' ? 'm' : 'yd') + (S.unit === 'yd' ? ' m' : ' yd') + quality}
+        ${others.length ? '<br>Other tees: ' + others.join(' · ') + ' ' + S.unit : ''}</div>
+      <ol class="steps">${steps}</ol>`;
+
+    const opts = [{kind:'tee', tee:S.tee}, ...h.way.map((_, i) => ({kind:'way', i})), {kind:'way'}, {kind:'green'}];
+    $('#manTarget').innerHTML = opts.map(o => `<option value='${esc(JSON.stringify(o))}'>${o.kind === 'way' && o.i == null ? 'New dogleg point' : esc(label(o))}</option>`).join('');
+
+    $('#grid').innerHTML = S.holes.map((x, i) => `<button type="button" data-act="go" data-v="${i}" class="${holeLen(x, S.tee) != null ? 'done' : ''} ${i === S.hole ? 'cur' : ''}" aria-label="Hole ${i+1}${holeLen(x, S.tee) != null ? ', measured' : ''}">${i+1}</button>`).join('');
+
+    renderCard();
+    renderMapTools();
+    drawMap();
+    if (!keepView || holePoints(h).length) fitMap(false);
+  }
+
+  function renderCard(){
+    let incomplete = false;
+    const sum = (from, to, tee) => { let s = 0, n = 0; for (let i = from; i < to; i++) { const d = holeLen(S.holes[i], tee); if (d != null) { s += d; n++; } } if (n < to - from) incomplete = true; return n ? fmt(s) + (n < to - from ? '*' : '') : '–'; };
+    const par = (from, to) => S.holes.slice(from, to).reduce((a, h) => a + h.par, 0);
+    const row = i => { const h = S.holes[i]; return `<tr class="h ${i === S.hole ? 'cur' : ''}" data-act="go" data-v="${i}"><td>${i+1}</td><td>${h.par}</td>${S.tees.map(t => `<td>${fmt(holeLen(h, t))}</td>`).join('')}</tr>`; };
+    const tot = (name, a, b) => `<tr class="tot"><td>${name}</td><td>${par(a, b)}</td>${S.tees.map(t => `<td>${sum(a, b, t)}</td>`).join('')}</tr>`;
+    let body = '';
+    for (let i = 0; i < 9; i++) body += row(i);
+    body += tot('Out', 0, 9);
+    for (let i = 9; i < 18; i++) body += row(i);
+    body += tot('In', 9, 18) + tot('Total', 0, 18);
+    $('#card').innerHTML = `<thead><tr><th>Hole</th><th>Par</th>${S.tees.map(t => `<th>${esc(t)} (${S.unit})</th>`).join('')}</tr></thead><tbody>${body}</tbody>`;
+    $('#cardnote').textContent = incomplete ? '* Partial total: some holes not yet measured for that tee.' : '';
+  }
+
+  // ---------- events ----------
+  function goHole(i){ stopCap(); armed = null; S.hole = i; save(); render(); setStatus(''); }
+  document.addEventListener('click', e => {
+    const el = e.target.closest('[data-act]'); if (!el) return;
+    const act = el.dataset.act, h = S.holes[S.hole];
+    const t = el.dataset.t ? JSON.parse(el.dataset.t) : null;
+    switch (act) {
+      case 'prev': if (S.hole > 0) goHole(S.hole - 1); break;
+      case 'next': if (S.hole < 17) goHole(S.hole + 1); break;
+      case 'go': goHole(+el.dataset.v); if (el.tagName === 'TR') window.scrollTo({ top: 0, behavior: 'smooth' }); break;
+      case 'par': h.par = +el.dataset.v; save(); render(true); break;
+      case 'tee': stopCap(); armed = null; S.tee = el.dataset.v; save(); render(); break;
+      case 'mark': armed = null; capture(t); break;
+      case 'arm': armed = (armed && targetKey(armed) === targetKey(t)) ? null : t; renderMapTools(); break;
+      case 'fit': fitMap(true); break;
+      case 'me': showMe(); break;
+      case 'clr': {
+        if (!confirm('Clear the ' + label(t).toLowerCase() + ' on hole ' + (S.hole + 1) + '?')) return;
+        if (t.kind === 'tee') delete h.tees[t.tee]; else if (t.kind === 'green') h.green = null; else h.way.splice(t.i, 1);
+        save(); render(true); break;
+      }
+      case 'editTees': {
+        const v = prompt('Tee names, separated by commas (e.g. White, Yellow, Red):', S.tees.join(', '));
+        if (v == null) return;
+        const list = [...new Set(v.split(',').map(s => s.trim()).filter(Boolean))].slice(0, 6);
+        if (!list.length) return;
+        S.tees = list; if (!list.includes(S.tee)) S.tee = list[0];
+        save(); render(); break;
+      }
+    }
+  });
+  document.querySelectorAll('[data-unit]').forEach(b => b.addEventListener('click', () => { S.unit = b.dataset.unit; save(); render(true); }));
+  document.querySelectorAll('[data-fix]').forEach(b => b.addEventListener('click', () => { S.fix = b.dataset.fix; save(); render(true);
+    setStatus(S.fix === 'long' ? 'Long fix: each mark collects readings for 45 seconds. Stand still with the phone face-up.' : 'Quick fix: each mark takes a few seconds.'); }));
+  document.querySelectorAll('[data-remark]').forEach(b => b.addEventListener('click', () => { S.remark = b.dataset.remark; save(); render(true);
+    setStatus(S.remark === 'avg' ? 'Average: marking a point again adds a visit and averages them. Best done 20+ minutes apart.' : 'Replace: marking a point again overwrites it.'); }));
+  $('#course').addEventListener('input', e => { S.course = e.target.value; save(); });
+
+  function parseCoords(s){
+    s = s.trim();
+    const m = s.match(/@(-?\d+(?:\.\d+)?),\s*(-?\d+(?:\.\d+)?)/)
+      || s.match(/[?&](?:q|query|ll|destination)=(-?\d+(?:\.\d+)?)(?:,|%2C)\s*(-?\d+(?:\.\d+)?)/i)
+      || s.match(/!3d(-?\d+(?:\.\d+)?)!4d(-?\d+(?:\.\d+)?)/)
+      || s.match(/^\s*(-?\d+(?:\.\d+)?)\s*[,\s]\s*(-?\d+(?:\.\d+)?)\s*$/);
+    if (!m) return null;
+    const lat = parseFloat(m[1]), lng = parseFloat(m[2]);
+    return (Math.abs(lat) <= 90 && Math.abs(lng) <= 180) ? { lat, lng } : null;
+  }
+  function manualSet(){
+    const c = parseCoords($('#manIn').value);
+    if (!c) { setStatus('Use "latitude, longitude" (e.g. 51.50070, -0.12460) or a Google Maps link containing coordinates.', true); return; }
+    const t = JSON.parse($('#manTarget').value);
+    putPoint(S.holes[S.hole], t, { lat: c.lat, lng: c.lng, acc: null, src: 'manual', t: Date.now() });
+    save(); render(true);
+    $('#manIn').value = '';
+    setStatus(label(t) + ' set on hole ' + (S.hole + 1) + '.');
+  }
+  $('#manBtn').addEventListener('click', manualSet);
+  $('#manIn').addEventListener('keydown', e => { if (e.key === 'Enter') manualSet(); });
+
+  // ---------- export / backup ----------
+  function download(name, text, type){
+    const blob = new Blob([text], { type });
+    const a = document.createElement('a');
+    a.href = URL.createObjectURL(blob); a.download = name;
+    document.body.appendChild(a); a.click();
+    setTimeout(() => { URL.revokeObjectURL(a.href); a.remove(); }, 1500);
+  }
+  const slug = () => (S.course.trim() || 'course').replace(/[^\w-]+/g, '-').replace(/^-|-$/g, '').toLowerCase() || 'course';
+  const csvCell = v => { v = v == null ? '' : String(v); return /[",\n]/.test(v) ? '"' + v.replace(/"/g, '""') + '"' : v; };
+  const srcLabel = p => !p ? '' : p.src === 'map' ? 'map' : p.src === 'manual' ? 'entered' : 'GPS ±' + Math.round(p.acc || 0) + 'm' + (p.visits && p.visits.length > 1 ? ' x' + p.visits.length : '');
+
+  $('#csvBtn').addEventListener('click', () => {
+    const head = ['Course', 'Hole', 'Par'];
+    S.tees.forEach(t => head.push(t + ' (yd)', t + ' (m)'));
+    S.tees.forEach(t => head.push(t + ' tee lat', t + ' tee lng', t + ' tee source'));
+    head.push('Dogleg points', 'Green lat', 'Green lng', 'Green source');
+    const rows = [head];
+    const totals = S.tees.map(() => 0);
+    S.holes.forEach((h, i) => {
+      const r = [S.course, i + 1, h.par];
+      S.tees.forEach((t, k) => { const d = holeLen(h, t); if (d != null) totals[k] += d; r.push(d == null ? '' : Math.round(d * F.yd), d == null ? '' : Math.round(d)); });
+      S.tees.forEach(t => { const p = h.tees[t]; r.push(p ? p.lat.toFixed(7) : '', p ? p.lng.toFixed(7) : '', srcLabel(p)); });
+      r.push(h.way.map(p => p.lat.toFixed(7) + ' ' + p.lng.toFixed(7)).join('; '), h.green ? h.green.lat.toFixed(7) : '', h.green ? h.green.lng.toFixed(7) : '', srcLabel(h.green));
+      rows.push(r);
+    });
+    const tr = [S.course, 'Total', S.holes.reduce((a, h) => a + h.par, 0)];
+    totals.forEach(d => tr.push(Math.round(d * F.yd), Math.round(d)));
+    rows.push(tr);
+    download(slug() + '-scorecard.csv', rows.map(r => r.map(csvCell).join(',')).join('\r\n'), 'text/csv');
+  });
+  $('#bakBtn').addEventListener('click', () => download(slug() + '-backup.json', JSON.stringify(S, null, 1), 'application/json'));
+  $('#resBtn').addEventListener('click', () => $('#resFile').click());
+  $('#resFile').addEventListener('change', e => {
+    const f = e.target.files[0]; if (!f) return;
+    f.text().then(txt => {
+      const d = JSON.parse(txt);
+      if (!valid(d)) throw new Error('bad');
+      if (!confirm('Replace the current course with "' + (d.course || 'backup') + '"?')) return;
+      stopCap(); armed = null; S = normalise(d); save(); fittedFor = ''; render(); setStatus('Backup restored.');
+    }).catch(() => setStatus('That file isn\'t a Course Measure backup.', true)).finally(() => { e.target.value = ''; });
+  });
+  $('#newBtn').addEventListener('click', () => {
+    if (!confirm('Start a new course? This clears all 18 holes on this device. Back up first if you need this one.')) return;
+    stopCap(); armed = null;
+    const keep = { tees: S.tees, unit: S.unit, fix: S.fix, remark: S.remark };
+    S = Object.assign(fresh(), keep); S.tee = keep.tees[0];
+    save(); fittedFor = ''; render(); setStatus('New course started.');
+  });
+
+  initMap();
+  if (!window.isSecureContext) setStatus('Open this page from an https:// address so GPS can work.', true);
+  render();
+})();
+</script>
+</body>
+</html>
