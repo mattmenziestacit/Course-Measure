@@ -1,0 +1,1140 @@
+<!doctype html>
+<html lang="en">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover">
+<meta name="theme-color" content="#1E5A3F">
+<meta name="apple-mobile-web-app-capable" content="yes">
+<meta name="apple-mobile-web-app-title" content="Course Measure">
+<title>Course Measure</title>
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+<link href="https://fonts.googleapis.com/css2?family=Barlow:wght@400;500;600&family=Barlow+Condensed:wght@600;700&display=swap" rel="stylesheet">
+<link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/leaflet/1.9.4/leaflet.min.css">
+<style>
+:root{
+  --bg:#F3F6F4; --surface:#FFFFFF; --ink:#15211B; --muted:#5C6B63; --line:#D6DFDA;
+  --green:#1E5A3F; --green-ink:#FFFFFF; --flag:#F2C230; --flag-ink:#2A2100; --danger:#B3261E; --soft:#E8EFEA;
+}
+@media (prefers-color-scheme: dark){
+  :root{
+    --bg:#0F1713; --surface:#18231D; --ink:#E7EFEA; --muted:#9AAAA1; --line:#2B3A32;
+    --green:#3E9A6C; --green-ink:#06130C; --flag:#F2C230; --flag-ink:#2A2100; --danger:#F2867E; --soft:#1F2C25;
+  }
+}
+*,*::before,*::after{box-sizing:border-box}
+html{-webkit-text-size-adjust:100%}
+body{margin:0;background:var(--bg);color:var(--ink);font:400 16px/1.5 "Barlow",system-ui,-apple-system,"Segoe UI",sans-serif;-webkit-font-smoothing:antialiased;
+  padding:env(safe-area-inset-top,0) env(safe-area-inset-right,0) env(safe-area-inset-bottom,0) env(safe-area-inset-left,0)}
+main{max-width:560px;margin:0 auto;padding:16px 16px 48px}
+h1,h2{font-family:"Barlow Condensed","Arial Narrow",sans-serif;font-weight:700;letter-spacing:.01em}
+h2{font-size:1.2rem;margin:0}
+button{font:inherit;cursor:pointer;color:inherit}
+button:focus-visible,input:focus-visible,select:focus-visible{outline:3px solid var(--flag);outline-offset:2px}
+input,select{font:inherit;color:var(--ink);background:var(--surface);border:1px solid var(--line);border-radius:10px;padding:9px 11px;min-width:0}
+
+.top{display:flex;gap:10px;align-items:center;margin-bottom:10px}
+.top input{flex:1;font-weight:600}
+.seg{display:inline-flex;border:1px solid var(--line);border-radius:999px;overflow:hidden;flex:none;background:var(--surface)}
+.seg button{border:0;background:transparent;padding:6px 12px;font-size:.85rem;font-weight:600}
+.seg button[aria-pressed="true"]{background:var(--ink);color:var(--bg)}
+.settings{display:flex;flex-wrap:wrap;gap:8px 16px;align-items:center;margin:0 0 12px;font-size:.85rem;color:var(--muted)}
+.settings label{display:flex;gap:8px;align-items:center}
+
+.card{background:var(--surface);border:1px solid var(--line);border-radius:16px;padding:14px}
+.holehead{display:grid;grid-template-columns:44px 1fr 44px;align-items:center;gap:8px}
+.nav{width:44px;height:44px;border-radius:12px;border:1px solid var(--line);background:transparent;font-size:1.4rem;line-height:1}
+.nav[disabled]{opacity:.35;cursor:default}
+.hn{text-align:center}
+.hn .big{font-family:"Barlow Condensed",sans-serif;font-weight:700;font-size:2rem;line-height:1}
+.pars{display:flex;justify-content:center;gap:4px;margin-top:4px;align-items:center;color:var(--muted);font-size:.85rem}
+.pars button{border:1px solid var(--line);background:transparent;border-radius:8px;min-width:30px;padding:2px 6px;font-weight:600}
+.pars button[aria-pressed="true"]{background:var(--green);color:var(--green-ink);border-color:var(--green)}
+
+.tees{display:flex;flex-wrap:wrap;gap:6px;margin:14px 0 4px}
+.chip{border:1px solid var(--line);background:transparent;border-radius:999px;padding:5px 12px;font-size:.9rem;font-weight:600}
+.chip[aria-pressed="true"]{background:var(--flag);color:var(--flag-ink);border-color:var(--flag)}
+.chip.ghost{color:var(--muted);font-weight:500}
+
+.len{display:flex;align-items:baseline;gap:8px;margin-top:10px}
+.len .num{font-family:"Barlow Condensed",sans-serif;font-weight:700;font-size:4rem;line-height:1;font-variant-numeric:tabular-nums}
+.len .u{font-family:"Barlow Condensed",sans-serif;font-weight:600;font-size:1.4rem;color:var(--muted)}
+.sub{color:var(--muted);font-size:.88rem}
+
+.steps{list-style:none;margin:14px 0 0;padding:0;display:grid;gap:8px}
+.step{display:grid;grid-template-columns:1fr auto;gap:8px;align-items:center;border:1px solid var(--line);border-radius:12px;padding:10px 12px;background:var(--bg)}
+.step .t{font-weight:600}
+.step .m{color:var(--muted);font-size:.8rem;line-height:1.35;word-break:break-word}
+.step .acts{display:flex;gap:6px;align-items:center}
+.mark{border:0;border-radius:10px;background:var(--green);color:var(--green-ink);padding:10px 14px;font-weight:600;white-space:nowrap}
+.mark.re{background:transparent;color:var(--green);border:1px solid var(--line)}
+.mark.busy{background:var(--flag);color:var(--flag-ink)}
+.x{border:0;background:transparent;color:var(--muted);padding:6px;border-radius:8px}
+.x:hover{color:var(--danger)}
+.x svg{width:18px;height:18px;display:block}
+.add{border:1px dashed var(--line);background:transparent;border-radius:12px;padding:10px;color:var(--muted);font-weight:600;width:100%}
+.add.busy{background:var(--flag);color:var(--flag-ink);border-style:solid;border-color:var(--flag)}
+
+.status{min-height:1.5em;margin:10px 2px 0;font-size:.9rem;color:var(--muted)}
+.status.err{color:var(--danger)}
+
+.mapcard{margin-top:12px;padding:0;overflow:hidden}
+.maptools{display:flex;flex-wrap:wrap;gap:6px;align-items:center;padding:10px 12px}
+.maptools .lbl{font-size:.85rem;color:var(--muted);margin-right:2px}
+.maptools .chip{font-size:.85rem;padding:4px 10px}
+.maptools .right{margin-left:auto;display:flex;gap:6px}
+#map{height:340px;width:100%;background:#2b3a32}
+.maphint{font-size:.8rem;color:var(--muted);padding:8px 12px 10px;margin:0}
+.pin{width:30px;height:30px;border-radius:50%;display:grid;place-items:center;font:700 13px/1 "Barlow Condensed",sans-serif;border:2px solid #fff;box-shadow:0 1px 4px rgba(0,0,0,.5);color:#fff}
+.pin.tee{background:#1E5A3F}
+.pin.tee.other{background:#5C6B63;opacity:.75;width:22px;height:22px;font-size:11px}
+.pin.way{background:#2F6FB3}
+.pin.green{background:#F2C230;color:#2A2100}
+.pin.me{background:#2F6FB3;width:16px;height:16px;border-width:3px}
+
+details{margin-top:10px}
+summary{color:var(--muted);font-size:.9rem;cursor:pointer;padding:4px 2px}
+.row{display:flex;gap:8px;margin-top:8px;flex-wrap:wrap}
+.row input{flex:1 1 180px}
+.btn{border:1px solid var(--line);background:var(--surface);border-radius:10px;padding:9px 14px;font-weight:600}
+.btn.sm{padding:4px 10px;font-size:.85rem;border-radius:999px}
+.btn.danger{color:var(--danger)}
+
+.grid{display:grid;grid-template-columns:repeat(9,1fr);gap:6px;margin:18px 0 0}
+.grid button{aspect-ratio:1;border:1px solid var(--line);background:var(--surface);border-radius:10px;font-weight:600;font-size:.9rem;padding:0}
+.grid button.done{background:var(--soft);border-color:var(--green);color:var(--green)}
+.grid button.cur{outline:3px solid var(--flag);outline-offset:1px}
+
+.sc{margin-top:24px}
+.sc h2{margin-bottom:8px}
+.tablewrap{overflow-x:auto;border:1px solid var(--line);border-radius:12px;background:var(--surface)}
+table{border-collapse:collapse;width:100%;font-size:.9rem;font-variant-numeric:tabular-nums}
+th,td{padding:7px 10px;text-align:right;border-bottom:1px solid var(--line);white-space:nowrap}
+th:first-child,td:first-child{text-align:left}
+thead th{font-family:"Barlow Condensed",sans-serif;font-size:1rem;color:var(--muted);font-weight:700}
+tbody tr.h{cursor:pointer}
+tbody tr.h.cur td{background:var(--soft)}
+tr.tot td{font-weight:700;background:var(--bg)}
+tr:last-child td{border-bottom:0}
+.note{color:var(--muted);font-size:.8rem;margin:6px 2px 0}
+.tools{display:flex;flex-wrap:wrap;gap:8px;margin-top:18px}
+.foot{margin-top:18px;color:var(--muted);font-size:.8rem}
+.foot p{margin:0 0 6px}
+#courseSel{flex:1;font-weight:600}
+.photos{margin-top:14px;border-top:1px solid var(--line);padding-top:12px}
+.phead{display:flex;justify-content:space-between;align-items:center}
+.phead .t{font-weight:600}
+.thumbs{display:grid;grid-template-columns:repeat(4,1fr);gap:6px;margin-top:8px}
+.thumb{aspect-ratio:1;border:1px solid var(--line);border-radius:10px;overflow:hidden;padding:0;background:var(--bg)}
+.thumb img{width:100%;height:100%;object-fit:cover;display:block}
+.pempty{color:var(--muted);font-size:.85rem;margin:6px 0 0}
+.viewer{position:fixed;inset:0;z-index:2000;background:rgba(0,0,0,.92);display:flex;flex-direction:column;padding:env(safe-area-inset-top,0) 0 env(safe-area-inset-bottom,0)}
+.viewer[hidden]{display:none}
+.viewer img{flex:1;min-height:0;width:100%;object-fit:contain}
+.vpanel{padding:12px 16px;display:grid;gap:8px;background:#111}
+.vpanel input{width:100%;background:#222;color:#fff;border-color:#444}
+.vcap{color:#bbb;font-size:.8rem}
+.vbar{display:flex;gap:8px;justify-content:flex-end}
+.thumb{position:relative}
+.plabel{position:absolute;left:0;right:0;bottom:0;background:rgba(0,0,0,.6);color:#fff;font-size:.7rem;padding:2px 4px;white-space:nowrap;overflow:hidden;text-overflow:ellipsis;text-align:left}
+.noloc{position:absolute;top:3px;left:3px;background:var(--danger);color:#fff;font-size:.6rem;padding:1px 4px;border-radius:4px}
+.pin.photo{background:#7B4FB0;border-radius:8px}
+.tiles{display:grid;gap:8px;margin-top:14px}
+.tile{border:1px solid var(--line);border-top:4px solid var(--tc);border-radius:12px;padding:8px 10px;background:var(--bg);min-width:0}
+.tn{font-size:.85rem;font-weight:600;display:flex;align-items:center;gap:6px}
+.tl{font-family:"Barlow Condensed",sans-serif;font-weight:700;font-size:2.2rem;line-height:1.05;font-variant-numeric:tabular-nums}
+.tl .u{font-size:1rem;color:var(--muted);margin-left:3px;font-weight:600}
+.tq{font-size:.75rem;color:var(--muted);white-space:nowrap;overflow:hidden;text-overflow:ellipsis}
+.dot{display:inline-block;width:12px;height:12px;border-radius:50%;border:1px solid rgba(0,0,0,.35);vertical-align:-1px;margin-right:6px;flex:none}
+.tile .dot{background:var(--tc);margin-right:0}
+.maptools .chip .dot{margin-right:4px}
+.linkbtn{border:0;background:none;padding:0;color:var(--green);font-weight:600;text-decoration:underline;font-size:inherit}
+.sub{margin-top:6px}
+.grid button{position:relative}
+.grid button.part{border-color:var(--flag);background:var(--surface)}
+.grid .cam{position:absolute;top:3px;right:3px;width:6px;height:6px;border-radius:50%;background:#7B4FB0}
+</style>
+</head>
+<body>
+<main>
+  <div class="top">
+    <select id="courseSel" aria-label="Choose course"></select>
+    <button class="btn sm" type="button" id="newCourseBtn">+ New</button>
+  </div>
+  <div class="top">
+    <input id="course" placeholder="Course name" aria-label="Rename this course" maxlength="80">
+    <div class="seg" id="units" role="group" aria-label="Units">
+      <button type="button" data-unit="yd">yd</button><button type="button" data-unit="m">m</button>
+    </div>
+  </div>
+  <div class="settings">
+    <label>GPS fix <span class="seg" role="group" aria-label="GPS fix length">
+      <button type="button" data-fix="quick">Quick</button><button type="button" data-fix="long">Long 45s</button></span></label>
+    <label>Re-mark <span class="seg" role="group" aria-label="When re-marking">
+      <button type="button" data-remark="replace">Replace</button><button type="button" data-remark="avg">Average</button></span></label>
+  </div>
+
+  <section class="card" id="hole"></section>
+  <p class="status" id="status" role="status" aria-live="polite"></p>
+
+  <section class="card mapcard">
+    <div class="maptools" id="maptools"></div>
+    <div id="map" role="application" aria-label="Satellite map of this hole"></div>
+    <p class="maphint" id="maphint">Drag a pin to line it up exactly with the tee markers or the middle of the green.</p>
+  </section>
+
+  <details id="manual">
+    <summary>Enter coordinates instead of using GPS</summary>
+    <div class="row">
+      <select id="manTarget" aria-label="Point to set"></select>
+      <input id="manIn" placeholder="51.50070, -0.12460 or a Google Maps link" autocomplete="off">
+      <button class="btn" id="manBtn" type="button">Set</button>
+    </div>
+  </details>
+
+  <div class="grid" id="grid" aria-label="Holes"></div>
+
+  <section class="sc">
+    <h2>Scorecard</h2>
+    <div class="tablewrap"><table id="card"></table></div>
+    <p class="note" id="cardnote"></p>
+  </section>
+
+  <div class="tools">
+    <button class="btn" type="button" id="pdfBtn">Export PDF</button>
+    <button class="btn" type="button" id="csvBtn">Export CSV</button>
+    <button class="btn" type="button" id="photosBtn">Save photos</button>
+    <button class="btn" type="button" id="bakBtn">Back up</button>
+    <button class="btn" type="button" id="resBtn">Restore</button>
+    <button class="btn danger" type="button" id="delCourseBtn">Delete course</button>
+    <input type="file" id="resFile" accept="application/json,.json" hidden>
+    <input type="file" id="photoIn" accept="image/*" multiple hidden>
+  </div>
+  <div class="foot">
+    <p>Mark each tee, any dogleg turning points along the line of play, then the centre of the green. Lengths run tee → dogleg points → green centre, measured flat.</p>
+    <p>For best accuracy: turn on Precise Location, use a Long fix standing still in the open, set Re-mark to Average and mark each point again on a second visit, then drag the pins onto the exact spot on the satellite map.</p>
+    <p>Courses and photos are saved on this device only. Use Back up to keep a copy of a course, photos included, and Restore to load it on another phone.</p>
+  </div>
+</main>
+<div class="viewer" id="viewer" hidden role="dialog" aria-modal="true" aria-label="Photo">
+  <img id="viewerImg" alt="">
+  <div class="vpanel">
+    <input id="viewerLabel" placeholder="Label, e.g. Hole 3 sign" aria-label="Photo label" maxlength="80">
+    <div class="vcap" id="viewerCap"></div>
+    <div class="vbar">
+      <button class="btn sm" type="button" id="viewerPlace">Place on map</button>
+      <button class="btn sm danger" type="button" id="viewerDel">Delete</button>
+      <button class="btn sm" type="button" id="viewerClose">Close</button>
+    </div>
+  </div>
+</div>
+
+<script src="https://cdnjs.cloudflare.com/ajax/libs/leaflet/1.9.4/leaflet.min.js"></script>
+<script>
+(function(){
+  'use strict';
+  const $ = s => document.querySelector(s);
+  const KEY = 'course-measure-v2', OLD_KEY = 'course-measure-v1';
+  const F = { yd: 1.0936133, m: 1 };
+  const ICON_X = '<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M4 7h16M10 11v6M14 11v6M6 7l1 13h10l1-13M9 7V4h6v3"/></svg>';
+  const LONG_MS = 45000;
+  const ICON_CAM = '<svg viewBox="0 0 24 24" width="16" height="16" fill="none" stroke="currentColor" stroke-width="2.2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M4 8h3l2-3h6l2 3h3v11H4z"/><circle cx="12" cy="13" r="3.5"/></svg>';
+  // Read GPS position from a JPEG's EXIF data, if the phone kept it
+  function exifGps(buf){
+    const v = new DataView(buf);
+    if (v.byteLength < 4 || v.getUint16(0) !== 0xFFD8) return null;
+    let o = 2;
+    while (o + 4 < v.byteLength) {
+      const m = v.getUint16(o); if ((m & 0xFF00) !== 0xFF00) return null;
+      const len = v.getUint16(o + 2);
+      if (m === 0xFFE1 && o + 10 < v.byteLength && v.getUint32(o + 4) === 0x45786966) {
+        const t = o + 10, le = v.getUint16(t) === 0x4949;
+        const u16 = p => v.getUint16(p, le), u32 = p => v.getUint32(p, le);
+        const ifd0 = t + u32(t + 4); let gps = 0;
+        for (let i = 0, n = u16(ifd0); i < n; i++) { const e = ifd0 + 2 + i * 12; if (u16(e) === 0x8825) gps = t + u32(e + 8); }
+        if (!gps) return null;
+        const tags = {};
+        for (let i = 0, n = u16(gps); i < n; i++) {
+          const e = gps + 2 + i * 12, tag = u16(e);
+          if (tag === 1 || tag === 3) tags[tag] = String.fromCharCode(v.getUint8(e + 8));
+          if (tag === 2 || tag === 4) { const off = t + u32(e + 8); const r = k => u32(off + k * 8) / (u32(off + k * 8 + 4) || 1); tags[tag] = r(0) + r(1) / 60 + r(2) / 3600; }
+        }
+        if (tags[2] == null || tags[4] == null) return null;
+        const lat = tags[2] * (tags[1] === 'S' ? -1 : 1), lng = tags[4] * (tags[3] === 'W' ? -1 : 1);
+        if (!isFinite(lat) || !isFinite(lng) || (lat === 0 && lng === 0) || Math.abs(lat) > 90 || Math.abs(lng) > 180) return null;
+        return { lat, lng };
+      }
+      if (m === 0xFFDA) return null;
+      o += 2 + len;
+    }
+    return null;
+  }
+  const uid = () => Date.now().toString(36) + Math.random().toString(36).slice(2, 8);
+
+  function blankHoles(){ return Array.from({length:18}, () => ({ par:4, tees:{}, way:[], green:null, photos:[] })); }
+  function freshCourse(name, tees){ tees = tees || ['White','Yellow','Red']; return { id: uid(), course: name || '', tees: tees.slice(), tee: tees[0], hole: 0, holes: blankHoles() }; }
+  function validCourse(s){ return s && Array.isArray(s.holes) && s.holes.length === 18 && Array.isArray(s.tees) && s.tees.length; }
+  function normCourse(s){
+    if (!s.id) s.id = uid();
+    if (!s.tees.includes(s.tee)) s.tee = s.tees[0];
+    s.hole = Math.min(17, Math.max(0, s.hole | 0));
+    s.holes.forEach(h => { h.tees = h.tees || {}; h.way = h.way || []; h.photos = h.photos || []; });
+    return s;
+  }
+  // DB = { current, order:[ids], courses:{id: course}, unit, fix, remark }
+  let DB = null;
+  try { DB = JSON.parse(localStorage.getItem(KEY) || 'null'); } catch(e){ DB = null; }
+  if (!DB || !DB.courses || !DB.order || !DB.order.length) {
+    let old = null; try { old = JSON.parse(localStorage.getItem(OLD_KEY) || 'null'); } catch(e){}
+    const c = validCourse(old) ? normCourse({ id: uid(), course: old.course || '', tees: old.tees, tee: old.tee, hole: old.hole, holes: old.holes }) : freshCourse('');
+    DB = { current: c.id, order: [c.id], courses: { [c.id]: c }, unit: (old && old.unit) || 'yd', fix: (old && old.fix) || 'quick', remark: (old && old.remark) || 'replace' };
+  }
+  DB.order = DB.order.filter(id => validCourse(DB.courses[id]));
+  if (!DB.order.length) { const c = freshCourse(''); DB.courses = { [c.id]: c }; DB.order = [c.id]; }
+  DB.order.forEach(id => normCourse(DB.courses[id]));
+  if (!DB.courses[DB.current]) DB.current = DB.order[0];
+  DB.unit = DB.unit || 'yd'; DB.fix = DB.fix || 'quick'; DB.remark = DB.remark || 'replace';
+  let S = DB.courses[DB.current];
+  function save(){ try { localStorage.setItem(KEY, JSON.stringify(DB)); } catch(e){ setStatus('Could not save on this device (storage blocked or full).', true); } }
+
+  // ---------- photo storage (IndexedDB, on this device) ----------
+  const idb = (() => {
+    let opening = null;
+    const open = () => opening || (opening = new Promise((res, rej) => {
+      const r = indexedDB.open('course-measure', 1);
+      r.onupgradeneeded = () => r.result.createObjectStore('photos');
+      r.onsuccess = () => res(r.result); r.onerror = () => { opening = null; rej(r.error); };
+    }));
+    const tx = async (mode, fn) => { const db = await open(); return new Promise((res, rej) => {
+      const t = db.transaction('photos', mode); const req = fn(t.objectStore('photos'));
+      t.oncomplete = () => res(req ? req.result : undefined); t.onerror = () => rej(t.error); t.onabort = () => rej(t.error);
+    }); };
+    return { put: (k, v) => tx('readwrite', s => s.put(v, k)), get: k => tx('readonly', s => s.get(k)), del: k => tx('readwrite', s => s.delete(k)) };
+  })();
+  const photoUrls = new Map(); // id -> object URL
+  async function photoUrl(id){
+    if (photoUrls.has(id)) return photoUrls.get(id);
+    const blob = await idb.get(id); if (!blob) return null;
+    const u = URL.createObjectURL(blob); photoUrls.set(id, u); return u;
+  }
+  async function shrinkImage(file){
+    const src = URL.createObjectURL(file);
+    try {
+      const img = await new Promise((res, rej) => { const i = new Image(); i.onload = () => res(i); i.onerror = rej; i.src = src; });
+      const max = 1600, sc = Math.min(1, max / Math.max(img.naturalWidth, img.naturalHeight));
+      const c = document.createElement('canvas');
+      c.width = Math.round(img.naturalWidth * sc); c.height = Math.round(img.naturalHeight * sc);
+      c.getContext('2d').drawImage(img, 0, 0, c.width, c.height);
+      return await new Promise((res, rej) => c.toBlob(b => b ? res(b) : rej(new Error('encode')), 'image/jpeg', 0.82));
+    } finally { URL.revokeObjectURL(src); }
+  }
+  async function deletePhotos(ids){ for (const id of ids) { try { await idb.del(id); } catch(e){} const u = photoUrls.get(id); if (u) { URL.revokeObjectURL(u); photoUrls.delete(id); } } }
+  const blobToDataUrl = b => new Promise((res, rej) => { const r = new FileReader(); r.onload = () => res(r.result); r.onerror = rej; r.readAsDataURL(b); });
+  const dataUrlToBlob = async d => (await fetch(d)).blob();
+
+  // ---------- geometry ----------
+  function hav(a, b){
+    const R = 6371008.8, r = x => x * Math.PI / 180;
+    const dLat = r(b.lat - a.lat), dLng = r(b.lng - a.lng);
+    const h = Math.sin(dLat/2)**2 + Math.cos(r(a.lat))*Math.cos(r(b.lat))*Math.sin(dLng/2)**2;
+    return 2 * R * Math.asin(Math.min(1, Math.sqrt(h)));
+  }
+  function route(h, tee){ const t = h.tees[tee]; return (t && h.green) ? [t, ...h.way, h.green] : null; }
+  function holeLen(h, tee){
+    const pts = route(h, tee); if (!pts) return null;
+    let d = 0; for (let i = 1; i < pts.length; i++) d += hav(pts[i-1], pts[i]);
+    return d;
+  }
+  const fmt = (m, u) => m == null ? '–' : Math.round(m * F[u || DB.unit]).toLocaleString();
+  const esc = s => String(s).replace(/[&<>"']/g, c => ({'&':'&amp;','<':'&lt;','>':'&gt;','"':'&quot;',"'":'&#39;'}[c]));
+  function describe(p){
+    let s = p.lat.toFixed(6) + ', ' + p.lng.toFixed(6);
+    if (p.src === 'map') s += ' · placed on map';
+    else if (p.src === 'manual') s += ' · entered';
+    else if (p.acc != null) s += ' · ±' + Math.round(p.acc) + ' m';
+    if (p.visits && p.visits.length > 1 && p.src !== 'map') s += ' · ' + p.visits.length + ' visits averaged';
+    return s;
+  }
+  function setStatus(msg, err){ const s = $('#status'); s.textContent = msg || ''; s.classList.toggle('err', !!err); }
+
+  // ---------- points ----------
+  function label(t){ return t.kind === 'tee' ? t.tee + ' tee' : t.kind === 'green' ? 'Green centre' : t.kind === 'photo' ? 'Photo' : (t.i == null ? 'Dogleg point' : 'Dogleg point ' + (t.i + 1)); }
+  function getPoint(h, t){ return t.kind === 'tee' ? h.tees[t.tee] : t.kind === 'green' ? h.green : t.kind === 'photo' ? (h.photos || []).find(x => x.id === t.id) : (t.i == null ? null : h.way[t.i]); }
+  function putPoint(h, t, p){
+    if (t.kind === 'photo') { const ph = (h.photos || []).find(x => x.id === t.id); if (ph) Object.assign(ph, { lat: p.lat, lng: p.lng, acc: p.acc, src: p.src }); }
+    else if (t.kind === 'tee') h.tees[t.tee] = p;
+    else if (t.kind === 'green') h.green = p;
+    else if (t.i == null) h.way.push(p); else h.way[t.i] = p;
+  }
+  function combineVisits(visits){
+    let w = 0, lat = 0, lng = 0;
+    for (const v of visits) { const k = 1 / Math.max(v.acc || 5, 1) ** 2; w += k; lat += v.lat * k; lng += v.lng * k; }
+    return { lat: lat / w, lng: lng / w, acc: Math.round(10 / Math.sqrt(w)) / 10 };
+  }
+  // GPS result → store, averaging with an earlier GPS visit if that setting is on
+  function storeGps(hi, t, fix){
+    const h = S.holes[hi], old = getPoint(h, t);
+    let p, averaged = false;
+    if (DB.remark === 'avg' && old && old.src !== 'map' && old.src !== 'manual') {
+      const visits = (old.visits && old.visits.length ? old.visits : [{ lat: old.lat, lng: old.lng, acc: old.acc, t: old.t }]).concat([fix]);
+      p = Object.assign(combineVisits(visits), { src: 'gps', visits, t: Date.now() });
+      averaged = true;
+    } else {
+      p = { lat: fix.lat, lng: fix.lng, acc: fix.acc, src: 'gps', visits: [fix], t: Date.now() };
+    }
+    putPoint(h, t, p); save(); render(true);
+    return { p, averaged, replacedMap: old && old.src === 'map' };
+  }
+
+  // ---------- GPS capture (averaged) ----------
+  let cap = null; // {id, timer, tick, key}
+  let wakeLock = null;
+  const targetKey = t => t.kind + ':' + (t.kind === 'tee' ? t.tee : t.kind === 'way' ? (t.i ?? 'new') : t.kind === 'photo' ? t.id : '');
+  async function wakeOn(){ try { if ('wakeLock' in navigator) wakeLock = await navigator.wakeLock.request('screen'); } catch(e){} }
+  function wakeOff(){ try { wakeLock && wakeLock.release(); } catch(e){} wakeLock = null; }
+
+  function stopCap(){
+    if (!cap) return;
+    navigator.geolocation.clearWatch(cap.id); clearTimeout(cap.timer); clearInterval(cap.tick);
+    cap = null; wakeOff();
+  }
+
+  function capture(target){
+    if (cap) { const same = cap.key === targetKey(target); stopCap(); render(); if (same) { setStatus('Cancelled.'); return; } }
+    if (!window.isSecureContext) { setStatus('Location only works on a secure (https://) page. Open this from its hosted web address.', true); return; }
+    if (!('geolocation' in navigator)) { setStatus('This browser can\'t share your location. Use the map or "Enter coordinates" below.', true); return; }
+    const holeIdx = S.hole, samples = [], start = Date.now(), long = DB.fix === 'long';
+    let done = false;
+    const best = () => Math.min(...samples.map(c => c.accuracy));
+    const progress = () => {
+      if (!samples.length) { setStatus((long ? 'Long fix: ' + Math.ceil((LONG_MS - (Date.now() - start)) / 1000) + ' s left. ' : '') + 'Waiting for GPS… hold still.'); return; }
+      const lead = long ? 'Long fix: ' + Math.max(0, Math.ceil((LONG_MS - (Date.now() - start)) / 1000)) + ' s left · ' : 'Getting a fix… ';
+      setStatus(lead + samples.length + ' reading' + (samples.length > 1 ? 's' : '') + ', best ±' + Math.round(best()) + ' m. Hold still.');
+    };
+    const finish = () => {
+      if (done) return; done = true; stopCap();
+      if (!samples.length) { setStatus('No GPS fix. Step into the open and try again.', true); render(); return; }
+      const b = best();
+      const use = samples.filter(c => c.accuracy <= Math.max(b * 2, b + 3));
+      let w = 0, lat = 0, lng = 0;
+      for (const c of use) { const k = 1 / Math.max(c.accuracy, 1) ** 2; w += k; lat += c.latitude * k; lng += c.longitude * k; }
+      const fix = { lat: lat / w, lng: lng / w, acc: Math.round(b * 10) / 10, n: use.length, t: Date.now() };
+      const r = storeGps(holeIdx, target, fix);
+      let msg = label(target) + (r.averaged ? ' averaged over ' + r.p.visits.length + ' visits' : ' marked') + ' on hole ' + (holeIdx + 1) + ' (' + use.length + ' readings, ±' + Math.round(b) + ' m this visit).';
+      if (r.replacedMap) msg += ' This replaced a pin you had placed on the map.';
+      if (b > 10) msg += ' Accuracy is low: wait in the open and re-mark.';
+      setStatus(msg);
+    };
+    const id = navigator.geolocation.watchPosition(pos => {
+      samples.push(pos.coords); progress();
+      if (!long) {
+        const good = samples.filter(c => c.accuracy <= 5).length;
+        if (good >= 4 || (Date.now() - start > 8000 && samples.length >= 3)) finish();
+      }
+    }, err => {
+      if (done) return; done = true; stopCap();
+      setStatus(err.code === 1
+        ? 'Location access is blocked. Allow location for this site in your browser/phone settings, then try again.'
+        : 'Location isn\'t available right now. Step into the open and try again.', true);
+      render();
+    }, { enableHighAccuracy: true, maximumAge: 0, timeout: long ? LONG_MS + 15000 : 30000 });
+    cap = { id, key: targetKey(target), timer: setTimeout(finish, long ? LONG_MS : 15000), tick: setInterval(progress, 1000) };
+    wakeOn(); progress(); render();
+  }
+
+  // ---------- map ----------
+  let map = null, layer = null, meLayer = null, armed = null, fittedFor = '';
+  function initMap(){
+    if (!window.L) { $('#map').style.display = 'none'; $('#maphint').textContent = 'The map couldn\'t load (no internet connection?). GPS marking still works.'; return; }
+    map = L.map('map', { maxZoom: 21, zoomSnap: 0.5, tap: true });
+    const sat = L.tileLayer('https://server.arcgisonline.com/ArcGIS/rest/services/World_Imagery/MapServer/tile/{z}/{y}/{x}',
+      { maxZoom: 21, maxNativeZoom: 19, attribution: 'Imagery © Esri, Maxar, Earthstar Geographics' });
+    const osm = L.tileLayer('https://tile.openstreetmap.org/{z}/{x}/{y}.png',
+      { maxZoom: 21, maxNativeZoom: 19, attribution: '© OpenStreetMap contributors' });
+    sat.addTo(map);
+    L.control.layers({ 'Satellite': sat, 'Map': osm }, null, { position: 'topright' }).addTo(map);
+    L.control.scale({ imperial: true, metric: true, position: 'topleft' }).addTo(map);
+    layer = L.layerGroup().addTo(map);
+    meLayer = L.layerGroup().addTo(map);
+    map.setView([20, 0], 2);
+    map.on('click', e => {
+      if (!armed) return;
+      const t = armed; armed = null;
+      const h = S.holes[S.hole];
+      putPoint(h, t, { lat: e.latlng.lat, lng: e.latlng.lng, acc: null, src: 'map', t: Date.now() });
+      save(); render(true);
+      setStatus(label(t) + (t.kind === 'photo' ? ' location set' : ' placed on the map') + ' for hole ' + (S.hole + 1) + '. Drag it to fine-tune.');
+    });
+  }
+  const pinIcon = (cls, txt) => L.divIcon({ className: '', html: `<div class="pin ${cls}">${txt}</div>`, iconSize: [30, 30], iconAnchor: [15, 15] });
+
+  function holePoints(h){
+    const pts = [];
+    S.tees.forEach(t => { if (h.tees[t]) pts.push(h.tees[t]); });
+    h.way.forEach(p => pts.push(p));
+    if (h.green) pts.push(h.green);
+    (h.photos || []).forEach(p => { if (p.lat != null) pts.push(p); });
+    return pts;
+  }
+  const TEE_COLOURS = { white:'#FFFFFF', yellow:'#F2C230', red:'#D63B2F', blue:'#2F6FB3', black:'#111111', gold:'#C9A227', green:'#1E8A4C', silver:'#B8C0C4', orange:'#F08A24', purple:'#7B4FB0' };
+  const teeColour = n => TEE_COLOURS[String(n).trim().toLowerCase()] || '#8A9A91';
+  const teeInk = n => ['white','yellow','gold','silver','orange'].includes(String(n).trim().toLowerCase()) ? '#15211B' : '#FFFFFF';
+
+  function fitMap(force){
+    if (!map) return;
+    const pts = holePoints(S.holes[S.hole]);
+    const key = S.id + '|' + S.hole + '|' + Math.min(pts.length, 2);
+    if (!force && fittedFor === key) return;
+    if (pts.length >= 2) { map.fitBounds(L.latLngBounds(pts.map(p => [p.lat, p.lng])), { padding: [40, 40], maxZoom: 19 }); fittedFor = key; return; }
+    if (pts.length === 1) { map.setView([pts[0].lat, pts[0].lng], 18); fittedFor = key; return; }
+    for (let d = 1; d < 18; d++) for (const j of [S.hole - d, S.hole + d]) {
+      if (j < 0 || j > 17) continue;
+      const q = holePoints(S.holes[j]); if (q.length) { const p = S.holes[j].green || q[q.length - 1]; map.setView([p.lat, p.lng], 17); fittedFor = key; return; }
+    }
+  }
+  function drawMap(){
+    if (!map) return;
+    layer.clearLayers();
+    const h = S.holes[S.hole];
+    const addPin = (p, style, txt, t) => {
+      if (p.src === 'gps' && p.acc) L.circle([p.lat, p.lng], { radius: p.acc, color: '#fff', weight: 1, opacity: .6, fillOpacity: .08, interactive: false }).addTo(layer);
+      const icon = L.divIcon({ className: '', html: `<div class="pin" style="${style}">${txt}</div>`, iconSize: [30, 30], iconAnchor: [15, 15] });
+      const m = L.marker([p.lat, p.lng], { icon, draggable: true, keyboard: false, title: label(t), zIndexOffset: 500 }).addTo(layer);
+      m.on('dragend', () => {
+        const ll = m.getLatLng(), old = getPoint(h, t);
+        putPoint(h, t, { lat: ll.lat, lng: ll.lng, acc: null, src: 'map', gps: old && old.src === 'gps' ? { lat: old.lat, lng: old.lng, acc: old.acc } : (old && old.gps) || null, t: Date.now() });
+        save(); render(true);
+        setStatus(label(t) + ' moved on the map. Lengths use the adjusted position.');
+      });
+    };
+    // shared line of play: dogleg points → green; each tee joins it at the first point
+    const shared = [...h.way, h.green].filter(Boolean);
+    if (shared.length >= 2) L.polyline(shared.map(p => [p.lat, p.lng]), { color: '#F2C230', weight: 3, interactive: false }).addTo(layer);
+    S.tees.forEach(name => { const tp = h.tees[name]; if (tp && shared.length) L.polyline([[tp.lat, tp.lng], [shared[0].lat, shared[0].lng]], { color: teeColour(name), weight: 3, opacity: .9, interactive: false }).addTo(layer); });
+    S.tees.forEach(name => { const tp = h.tees[name]; if (tp) addPin(tp, `background:${teeColour(name)};color:${teeInk(name)}`, esc((name[0] || 'T').toUpperCase()), { kind: 'tee', tee: name }); });
+    h.way.forEach((p, i) => addPin(p, 'background:#2F6FB3', i + 1, { kind: 'way', i }));
+    if (h.green) addPin(h.green, 'background:#1E8A4C;color:#fff', 'G', { kind: 'green' });
+    (h.photos || []).forEach(ph => {
+      if (ph.lat == null) return;
+      const icon = L.divIcon({ className: '', html: `<div class="pin photo">${ICON_CAM}</div>`, iconSize: [30, 30], iconAnchor: [15, 15] });
+      const m = L.marker([ph.lat, ph.lng], { icon, draggable: true, keyboard: false, title: ph.label || 'Photo', zIndexOffset: 400 }).addTo(layer);
+      m.on('click', () => openViewer(ph.id));
+      m.on('dragend', () => { const ll = m.getLatLng(); Object.assign(ph, { lat: ll.lat, lng: ll.lng, acc: null, src: 'map' }); save(); render(true); setStatus('Photo point moved on the map.'); });
+    });
+  }
+  function renderMapTools(){
+    const h = S.holes[S.hole];
+    const chip = (t, txt) => `<button type="button" class="chip" data-act="arm" data-t='${esc(JSON.stringify(t))}' aria-pressed="${!!armed && targetKey(armed) === targetKey(t)}">${txt}</button>`;
+    $('#maptools').innerHTML = `<span class="lbl">Tap map to place:</span>
+      ${S.tees.map(n => chip({kind:'tee', tee:n}, `<span class="dot" style="background:${teeColour(n)}"></span>${esc(n)}`)).join('')}${chip({kind:'way'}, '+ Dogleg')}${chip({kind:'green'}, 'Green')}
+      <span class="right"><button type="button" class="btn sm" data-act="fit">Fit hole</button><button type="button" class="btn sm" data-act="me">Me</button></span>`;
+    $('#maphint').textContent = armed
+      ? (armed.kind === 'photo' ? 'Now tap the map where the photo was taken.' : 'Now tap the map where the ' + label(armed).toLowerCase().replace(/ \d+$/, '') + ' should go.')
+      : (holePoints(h).length ? 'Drag a pin to line it up exactly with the tee markers or the middle of the green. Zoom right in for precision.' : 'Mark points with GPS above, or tap a button here and then tap the map.');
+  }
+  function showMe(){
+    if (!map) return;
+    if (!navigator.geolocation || !window.isSecureContext) { setStatus('Location isn\'t available on this page.', true); return; }
+    setStatus('Finding you…');
+    navigator.geolocation.getCurrentPosition(pos => {
+      const { latitude: lat, longitude: lng, accuracy } = pos.coords;
+      meLayer.clearLayers();
+      L.circle([lat, lng], { radius: accuracy, color: '#2F6FB3', weight: 1, fillOpacity: .12, interactive: false }).addTo(meLayer);
+      L.marker([lat, lng], { icon: L.divIcon({ className: '', html: '<div class="pin me"></div>', iconSize: [16, 16], iconAnchor: [8, 8] }), interactive: false }).addTo(meLayer);
+      map.setView([lat, lng], Math.max(map.getZoom(), 18));
+      setStatus('You are here, ±' + Math.round(accuracy) + ' m.');
+    }, err => setStatus(err.code === 1 ? 'Location access is blocked for this site.' : 'Couldn\'t get your location.', true),
+    { enableHighAccuracy: true, timeout: 20000, maximumAge: 5000 });
+  }
+
+  // ---------- render ----------
+  const courseLabel = c => {
+    const n = c.holes.filter(h => c.tees.some(t => holeLen(h, t) != null)).length;
+    return (c.course.trim() || 'Untitled course') + ' (' + n + '/18)';
+  };
+  function renderCourseSel(){
+    $('#courseSel').innerHTML = DB.order.map(id => `<option value="${id}" ${id === S.id ? 'selected' : ''}>${esc(courseLabel(DB.courses[id]))}</option>`).join('')
+      + '<option value="__new">+ New course…</option>';
+  }
+  function quality(r){
+    if (!r) return '';
+    const gps = r.filter(p => p.src === 'gps' && p.acc != null), onMap = r.filter(p => p.src === 'map').length;
+    if (onMap === r.length) return 'placed on map';
+    if (gps.length) return '±' + Math.round(gps.reduce((a, p) => a + p.acc, 0)) + ' m' + (onMap ? ' · map-adjusted' : '');
+    return '';
+  }
+  function render(keepView){
+    const h = S.holes[S.hole];
+    renderCourseSel();
+    if (document.activeElement !== $('#course')) $('#course').value = S.course;
+    document.querySelectorAll('[data-unit]').forEach(b => b.setAttribute('aria-pressed', b.dataset.unit === DB.unit));
+    document.querySelectorAll('[data-fix]').forEach(b => b.setAttribute('aria-pressed', b.dataset.fix === DB.fix));
+    document.querySelectorAll('[data-remark]').forEach(b => b.setAttribute('aria-pressed', b.dataset.remark === DB.remark));
+
+    const isBusy = t => cap && cap.key === targetKey(t);
+    const markBtn = (t, has, text) => {
+      const busy = isBusy(t);
+      const re = DB.remark === 'avg' ? '+ Visit' : 'Re-mark';
+      return `<button type="button" class="mark ${busy ? 'busy' : has ? 're' : ''}" data-act="mark" data-t='${esc(JSON.stringify(t))}'>${busy ? 'Cancel' : has ? re : text}</button>`;
+    };
+    const clrBtn = t => `<button type="button" class="x" data-act="clr" data-t='${esc(JSON.stringify(t))}' aria-label="Clear ${esc(label(t))}">${ICON_X}</button>`;
+
+    const tiles = S.tees.map(n => {
+      const d = holeLen(h, n), q = quality(route(h, n));
+      return `<div class="tile" style="--tc:${teeColour(n) === '#FFFFFF' ? '#C9D1CC' : teeColour(n)}"><div class="tn"><span class="dot"></span>${esc(n)}</div>
+        <div class="tl">${fmt(d)}<span class="u">${d == null ? '' : DB.unit}</span></div><div class="tq">${d == null ? (h.tees[n] ? 'mark green' : 'not marked') : q}</div></div>`;
+    }).join('');
+
+    let steps = S.tees.map(n => {
+      const tp = h.tees[n], t = { kind: 'tee', tee: n };
+      return `<li class="step"><div><div class="t"><span class="dot" style="background:${teeColour(n)}"></span>${esc(n)} tee</div><div class="m">${tp ? describe(tp) : 'Stand at the centre of the ' + esc(n.toLowerCase()) + ' markers'}</div></div>
+        <div class="acts">${tp ? clrBtn(t) : ''}${markBtn(t, !!tp, 'Mark')}</div></li>`;
+    }).join('');
+    h.way.forEach((p, i) => {
+      steps += `<li class="step"><div><div class="t">Dogleg point ${i+1}</div><div class="m">${describe(p)}</div></div>
+        <div class="acts">${clrBtn({kind:'way', i})}${markBtn({kind:'way', i}, true)}</div></li>`;
+    });
+    const addBusy = isBusy({kind:'way'});
+    steps += `<li><button type="button" class="add ${addBusy ? 'busy' : ''}" data-act="mark" data-t='${esc(JSON.stringify({kind:'way'}))}'>${addBusy ? 'Cancel' : '+ Add dogleg point where I’m standing'}</button></li>`;
+    steps += `<li class="step"><div><div class="t"><span class="dot" style="background:#1E8A4C"></span>Green centre</div><div class="m">${h.green ? describe(h.green) : 'Stand in the middle of the green'}</div></div>
+      <div class="acts">${h.green ? clrBtn({kind:'green'}) : ''}${markBtn({kind:'green'}, !!h.green, 'Mark')}</div></li>`;
+
+    const photos = h.photos || [];
+    $('#hole').innerHTML = `
+      <div class="holehead">
+        <button type="button" class="nav" data-act="prev" aria-label="Previous hole" ${S.hole === 0 ? 'disabled' : ''}>‹</button>
+        <div class="hn"><div class="big">Hole ${S.hole + 1}</div>
+          <div class="pars">Par ${[3,4,5,6].map(p => `<button type="button" data-act="par" data-v="${p}" aria-pressed="${h.par === p}">${p}</button>`).join('')}</div></div>
+        <button type="button" class="nav" data-act="next" aria-label="Next hole" ${S.hole === 17 ? 'disabled' : ''}>›</button>
+      </div>
+      <div class="tiles" style="grid-template-columns:repeat(${Math.min(S.tees.length, 3)},1fr)">${tiles}</div>
+      <div class="sub">${h.way.length ? 'Measured to green centre via ' + h.way.length + ' dogleg point' + (h.way.length > 1 ? 's' : '') + '. ' : ''}<button type="button" class="linkbtn" data-act="editTees">Edit tees</button></div>
+      <ol class="steps">${steps}</ol>
+      <div class="photos">
+        <div class="phead"><span class="t">Photos${photos.length ? ' (' + photos.length + ')' : ''}</span><button type="button" class="btn sm" data-act="addPhoto">+ Add photo</button></div>
+        ${photos.length ? `<div class="thumbs">${photos.map(p => `<button type="button" class="thumb" data-act="viewPhoto" data-v="${p.id}" aria-label="View photo${p.label ? ': ' + esc(p.label) : ''}"><img data-pid="${p.id}" alt="">${p.label ? `<span class="plabel">${esc(p.label)}</span>` : ''}${p.lat == null ? '<span class="noloc">no location</span>' : ''}</button>`).join('')}</div>`
+          : '<p class="pempty">No photos yet. Photograph a sign, tee, green or hazard: each photo is pinned on the map where it was taken and included in the export.</p>'}
+      </div>`;
+    $('#hole').querySelectorAll('img[data-pid]').forEach(img => photoUrl(img.dataset.pid).then(u => { if (u) img.src = u; }).catch(() => {}));
+
+    const opts = [...S.tees.map(n => ({kind:'tee', tee:n})), ...h.way.map((_, i) => ({kind:'way', i})), {kind:'way'}, {kind:'green'}];
+    $('#manTarget').innerHTML = opts.map(o => `<option value='${esc(JSON.stringify(o))}'>${o.kind === 'way' && o.i == null ? 'New dogleg point' : esc(label(o))}</option>`).join('');
+
+    $('#grid').innerHTML = S.holes.map((x, i) => {
+      const n = S.tees.filter(t => holeLen(x, t) != null).length;
+      const cls = n === S.tees.length ? 'done' : n ? 'part' : '';
+      return `<button type="button" data-act="go" data-v="${i}" class="${cls} ${i === S.hole ? 'cur' : ''}" aria-label="Hole ${i+1}${n ? ', ' + n + ' of ' + S.tees.length + ' tees measured' : ''}">${i+1}${x.photos && x.photos.length ? '<i class="cam"></i>' : ''}</button>`;
+    }).join('');
+
+    renderCard();
+    renderMapTools();
+    drawMap();
+    if (!keepView || holePoints(h).length) fitMap(false);
+  }
+
+  function renderCard(){
+    let incomplete = false;
+    const sum = (from, to, tee) => { let s = 0, n = 0; for (let i = from; i < to; i++) { const d = holeLen(S.holes[i], tee); if (d != null) { s += d; n++; } } if (n < to - from) incomplete = true; return n ? fmt(s) + (n < to - from ? '*' : '') : '–'; };
+    const par = (from, to) => S.holes.slice(from, to).reduce((a, h) => a + h.par, 0);
+    const row = i => { const h = S.holes[i]; return `<tr class="h ${i === S.hole ? 'cur' : ''}" data-act="go" data-v="${i}"><td>${i+1}</td><td>${h.par}</td>${S.tees.map(t => `<td>${fmt(holeLen(h, t))}</td>`).join('')}</tr>`; };
+    const tot = (name, a, b) => `<tr class="tot"><td>${name}</td><td>${par(a, b)}</td>${S.tees.map(t => `<td>${sum(a, b, t)}</td>`).join('')}</tr>`;
+    let body = '';
+    for (let i = 0; i < 9; i++) body += row(i);
+    body += tot('Out', 0, 9);
+    for (let i = 9; i < 18; i++) body += row(i);
+    body += tot('In', 9, 18) + tot('Total', 0, 18);
+    $('#card').innerHTML = `<thead><tr><th>Hole</th><th>Par</th>${S.tees.map(t => `<th>${esc(t)} (${DB.unit})</th>`).join('')}</tr></thead><tbody>${body}</tbody>`;
+    $('#cardnote').textContent = incomplete ? '* Partial total: some holes not yet measured for that tee.' : '';
+  }
+
+  // ---------- courses ----------
+  function switchCourse(id, msg){
+    stopCap(); armed = null; closeViewer();
+    DB.current = id; S = DB.courses[id]; fittedFor = '';
+    save(); render(); setStatus(msg || 'Opened ' + (S.course.trim() || 'Untitled course') + '.');
+  }
+  function newCourse(){
+    const name = prompt('Name of the new course:', '');
+    if (name == null) { renderCourseSel(); return; }
+    const c = freshCourse(name.trim(), S.tees);
+    DB.courses[c.id] = c; DB.order.push(c.id);
+    switchCourse(c.id, 'New course started: ' + (c.course || 'Untitled course') + '.');
+  }
+  $('#courseSel').addEventListener('change', e => { const v = e.target.value; if (v === '__new') newCourse(); else if (v !== S.id) switchCourse(v); });
+  $('#newCourseBtn').addEventListener('click', newCourse);
+  $('#delCourseBtn').addEventListener('click', async () => {
+    const name = S.course.trim() || 'Untitled course';
+    if (!confirm('Delete "' + name + '" and all its measurements and photos from this phone? Back up first if you might need it.')) return;
+    stopCap();
+    const ids = S.holes.flatMap(h => (h.photos || []).map(p => p.id));
+    delete DB.courses[S.id]; DB.order = DB.order.filter(x => x !== S.id);
+    if (!DB.order.length) { const c = freshCourse('', S.tees); DB.courses[c.id] = c; DB.order.push(c.id); }
+    switchCourse(DB.order[0], 'Deleted ' + name + '.');
+    deletePhotos(ids);
+  });
+
+  // ---------- photos ----------
+  let photoHole = null, viewing = null;
+  $('#photoIn').addEventListener('change', async e => {
+    const files = [...e.target.files]; e.target.value = '';
+    if (!files.length || photoHole == null) return;
+    const course = S, h = course.holes[photoHole], holeNo = photoHole + 1;
+    try { if (navigator.storage && navigator.storage.persist) navigator.storage.persist(); } catch(_){}
+    // location: the photo's own GPS tag if it has one, otherwise where the phone is now
+    let herePromise = null;
+    const here = () => herePromise || (herePromise = new Promise(res => {
+      if (!navigator.geolocation || !window.isSecureContext) return res(null);
+      setStatus('Getting your location for the photo…');
+      navigator.geolocation.getCurrentPosition(p => res({ lat: p.coords.latitude, lng: p.coords.longitude, acc: Math.round(p.coords.accuracy * 10) / 10 }),
+        () => res(null), { enableHighAccuracy: true, timeout: 15000, maximumAge: 0 });
+    }));
+    let added = 0, unplaced = 0;
+    for (const f of files) {
+      try {
+        let loc = null;
+        try { const g = exifGps(await f.slice(0, 262144).arrayBuffer()); if (g) loc = Object.assign(g, { acc: null, src: 'photo' }); } catch(_){}
+        if (!loc) { const g = await here(); if (g) loc = Object.assign(g, { src: 'gps' }); }
+        if (!loc) unplaced++;
+        setStatus('Saving photo ' + (added + 1) + ' of ' + files.length + '…');
+        const blob = await shrinkImage(f), id = uid();
+        await idb.put(id, blob);
+        (h.photos = h.photos || []).push(Object.assign({ id, t: Date.now(), label: '' }, loc || { lat: null, lng: null, acc: null, src: null })); added++;
+        save();
+      } catch(err) { setStatus('Couldn\'t save that photo' + (err && err.name === 'QuotaExceededError' ? ': this phone\'s storage for the site is full.' : '.'), true); }
+    }
+    if (S === course) render(true);
+    if (added) setStatus(added + ' photo' + (added > 1 ? 's' : '') + ' added to hole ' + holeNo + (unplaced ? '. ' + unplaced + ' had no location: open it and tap "Place on map".' : ', pinned on the map. Tap a photo to give it a label.'));
+  });
+  function openViewer(id){
+    const p = (S.holes[S.hole].photos || []).find(x => x.id === id); if (!p) return;
+    viewing = id;
+    $('#viewerImg').removeAttribute('src');
+    photoUrl(id).then(u => { if (u && viewing === id) $('#viewerImg').src = u; });
+    $('#viewerLabel').value = p.label || '';
+    const where = p.lat == null ? 'No location yet' : p.lat.toFixed(6) + ', ' + p.lng.toFixed(6) + ' · ' + ({ photo: 'from the photo', gps: 'your GPS' + (p.acc ? ' ±' + Math.round(p.acc) + ' m' : ''), map: 'placed on map' }[p.src] || '');
+    $('#viewerCap').textContent = 'Hole ' + (S.hole + 1) + ' · ' + new Date(p.t).toLocaleString(undefined, { day: 'numeric', month: 'short', hour: '2-digit', minute: '2-digit' }) + ' · ' + where;
+    $('#viewerPlace').textContent = p.lat == null ? 'Place on map' : 'Move on map';
+    $('#viewer').hidden = false;
+  }
+  function closeViewer(){ viewing = null; $('#viewer').hidden = true; }
+  $('#viewerClose').addEventListener('click', closeViewer);
+  $('#viewerLabel').addEventListener('input', e => {
+    const p = viewing && (S.holes[S.hole].photos || []).find(x => x.id === viewing); if (!p) return;
+    p.label = e.target.value.slice(0, 80); save();
+  });
+  $('#viewerLabel').addEventListener('change', () => render(true));
+  $('#viewerPlace').addEventListener('click', () => {
+    const id = viewing; if (!id) return;
+    closeViewer(); armed = { kind: 'photo', id }; renderMapTools();
+    $('#map').scrollIntoView({ behavior: 'smooth', block: 'center' });
+    setStatus('Tap the map where the photo was taken. You can drag the camera pin afterwards.');
+  });
+  $('#viewer').addEventListener('click', e => { if (e.target.id === 'viewer') closeViewer(); });
+  document.addEventListener('keydown', e => { if (e.key === 'Escape' && viewing) closeViewer(); });
+  $('#viewerDel').addEventListener('click', () => {
+    if (!viewing || !confirm('Delete this photo?')) return;
+    const h = S.holes[S.hole], id = viewing;
+    h.photos = (h.photos || []).filter(p => p.id !== id);
+    save(); closeViewer(); render(true); deletePhotos([id]); setStatus('Photo deleted.');
+  });
+
+  // ---------- events ----------
+  function goHole(i){ stopCap(); armed = null; S.hole = i; save(); render(); setStatus(''); }
+  document.addEventListener('click', e => {
+    const el = e.target.closest('[data-act]'); if (!el) return;
+    const act = el.dataset.act, h = S.holes[S.hole];
+    const t = el.dataset.t ? JSON.parse(el.dataset.t) : null;
+    switch (act) {
+      case 'prev': if (S.hole > 0) goHole(S.hole - 1); break;
+      case 'next': if (S.hole < 17) goHole(S.hole + 1); break;
+      case 'go': goHole(+el.dataset.v); if (el.tagName === 'TR') window.scrollTo({ top: 0, behavior: 'smooth' }); break;
+      case 'par': h.par = +el.dataset.v; save(); render(true); break;
+      case 'mark': armed = null; capture(t); break;
+      case 'arm': armed = (armed && targetKey(armed) === targetKey(t)) ? null : t; renderMapTools(); break;
+      case 'fit': fitMap(true); break;
+      case 'me': showMe(); break;
+      case 'addPhoto': photoHole = S.hole; $('#photoIn').click(); break;
+      case 'viewPhoto': openViewer(el.dataset.v); break;
+      case 'clr': {
+        if (!confirm('Clear the ' + label(t).toLowerCase() + ' on hole ' + (S.hole + 1) + '?')) return;
+        if (t.kind === 'tee') delete h.tees[t.tee]; else if (t.kind === 'green') h.green = null; else h.way.splice(t.i, 1);
+        save(); render(true); break;
+      }
+      case 'editTees': {
+        const v = prompt('Tee names for this course, separated by commas (e.g. White, Yellow, Red):', S.tees.join(', '));
+        if (v == null) return;
+        const list = [...new Set(v.split(',').map(s => s.trim()).filter(Boolean))].slice(0, 6);
+        if (!list.length) return;
+        S.tees = list; S.tee = list[0];
+        save(); render(true); break;
+      }
+    }
+  });
+  document.querySelectorAll('[data-unit]').forEach(b => b.addEventListener('click', () => { DB.unit = b.dataset.unit; save(); render(true); }));
+  document.querySelectorAll('[data-fix]').forEach(b => b.addEventListener('click', () => { DB.fix = b.dataset.fix; save(); render(true);
+    setStatus(DB.fix === 'long' ? 'Long fix: each mark collects readings for 45 seconds. Stand still with the phone face-up.' : 'Quick fix: each mark takes a few seconds.'); }));
+  document.querySelectorAll('[data-remark]').forEach(b => b.addEventListener('click', () => { DB.remark = b.dataset.remark; save(); render(true);
+    setStatus(DB.remark === 'avg' ? 'Average: marking a point again adds a visit and averages them. Best done 20+ minutes apart.' : 'Replace: marking a point again overwrites it.'); }));
+  $('#course').addEventListener('input', e => { S.course = e.target.value; save(); renderCourseSel(); });
+
+  function parseCoords(s){
+    s = s.trim();
+    const m = s.match(/@(-?\d+(?:\.\d+)?),\s*(-?\d+(?:\.\d+)?)/)
+      || s.match(/[?&](?:q|query|ll|destination)=(-?\d+(?:\.\d+)?)(?:,|%2C)\s*(-?\d+(?:\.\d+)?)/i)
+      || s.match(/!3d(-?\d+(?:\.\d+)?)!4d(-?\d+(?:\.\d+)?)/)
+      || s.match(/^\s*(-?\d+(?:\.\d+)?)\s*[,\s]\s*(-?\d+(?:\.\d+)?)\s*$/);
+    if (!m) return null;
+    const lat = parseFloat(m[1]), lng = parseFloat(m[2]);
+    return (Math.abs(lat) <= 90 && Math.abs(lng) <= 180) ? { lat, lng } : null;
+  }
+  function manualSet(){
+    const c = parseCoords($('#manIn').value);
+    if (!c) { setStatus('Use "latitude, longitude" (e.g. 51.50070, -0.12460) or a Google Maps link containing coordinates.', true); return; }
+    const t = JSON.parse($('#manTarget').value);
+    putPoint(S.holes[S.hole], t, { lat: c.lat, lng: c.lng, acc: null, src: 'manual', t: Date.now() });
+    save(); render(true);
+    $('#manIn').value = '';
+    setStatus(label(t) + ' set on hole ' + (S.hole + 1) + '.');
+  }
+  $('#manBtn').addEventListener('click', manualSet);
+  $('#manIn').addEventListener('keydown', e => { if (e.key === 'Enter') manualSet(); });
+
+  // ---------- export / backup ----------
+  function download(name, data, type){
+    const blob = data instanceof Blob ? data : new Blob([data], { type });
+    const a = document.createElement('a');
+    a.href = URL.createObjectURL(blob); a.download = name;
+    document.body.appendChild(a); a.click();
+    setTimeout(() => { URL.revokeObjectURL(a.href); a.remove(); }, 4000);
+  }
+  const slug = () => (S.course.trim() || 'course').replace(/[^\w-]+/g, '-').replace(/^-|-$/g, '').toLowerCase() || 'course';
+  const csvCell = v => { v = v == null ? '' : String(v); return /[",\n\r]/.test(v) ? '"' + v.replace(/"/g, '""') + '"' : v; };
+  const srcLabel = p => !p ? '' : p.src === 'map' ? 'map' : p.src === 'manual' ? 'entered' : p.src === 'photo' ? 'photo GPS tag' : p.src === 'gps' ? 'GPS' + (p.acc ? ' ±' + Math.round(p.acc) + 'm' : '') + (p.visits && p.visits.length > 1 ? ' x' + p.visits.length : '') : '';
+  // ---------- nearest hole for photos ----------
+  function localXY(p, o){ const kx = 111320 * Math.cos(o.lat * Math.PI / 180); return { x: (p.lng - o.lng) * kx, y: (p.lat - o.lat) * 110540 }; }
+  function distToHole(p, h){
+    const lines = [];
+    S.tees.forEach(t => { if (h.tees[t]) lines.push([h.tees[t], ...h.way, h.green].filter(Boolean)); });
+    if (!lines.length) { const pts = [...h.way, h.green].filter(Boolean); if (pts.length) lines.push(pts); }
+    let best = Infinity;
+    for (const line of lines) {
+      const q = line.map(a => localXY(a, p));
+      if (q.length === 1) best = Math.min(best, Math.hypot(q[0].x, q[0].y));
+      for (let i = 1; i < q.length; i++) {
+        const a = q[i-1], b = q[i], dx = b.x - a.x, dy = b.y - a.y, L2 = dx*dx + dy*dy;
+        const t = L2 ? Math.max(0, Math.min(1, -(a.x*dx + a.y*dy) / L2)) : 0;
+        best = Math.min(best, Math.hypot(a.x + t*dx, a.y + t*dy));
+      }
+    }
+    return best;
+  }
+  function nearestHole(p){
+    if (!p || p.lat == null) return null;
+    let res = null;
+    S.holes.forEach((h, i) => { const d = distToHole(p, h); if (d < Infinity && (!res || d < res.d)) res = { hole: i, d }; });
+    return res;
+  }
+  // One consistent list of photos used by the CSV, saved files and PDF
+  function photoIndex(){
+    const all = [];
+    S.holes.forEach((h, i) => (h.photos || []).forEach(ph => { const near = nearestHole(ph); all.push({ ph, added: i, near, hole: near ? near.hole : i }); }));
+    all.sort((a, b) => a.hole - b.hole || a.ph.t - b.ph.t);
+    const perHole = {};
+    all.forEach((r, k) => {
+      r.ref = 'P' + (k + 1);
+      r.n = perHole[r.hole] = (perHole[r.hole] || 0) + 1;
+      const lab = r.ph.label ? '-' + r.ph.label.replace(/[^\w-]+/g, '-').replace(/^-|-$/g, '').toLowerCase().slice(0, 30) : '';
+      r.file = slug() + '-hole' + String(r.hole + 1).padStart(2, '0') + '-' + r.n + lab + '.jpg';
+    });
+    return all;
+  }
+  const mapsLink = p => 'https://www.google.com/maps/search/?api=1&query=' + p.lat.toFixed(6) + ',' + p.lng.toFixed(6);
+
+  // ---------- write GPS into a JPEG's EXIF so other apps can place it ----------
+  function withGps(jpeg, lat, lng, desc){
+    const ascii = s => (s || '').replace(/[^\x20-\x7E]/g, '?');
+    const d = ascii(desc) + '\0';
+    const nIfd0 = 2, ifd0Size = 2 + 12 * nIfd0 + 4, gpsSize = 2 + 12 * 5 + 4;
+    const gpsOff = 8 + ifd0Size, latOff = gpsOff + gpsSize, lngOff = latOff + 24, descOff = lngOff + 24;
+    const buf = new ArrayBuffer(descOff + d.length), v = new DataView(buf);
+    v.setUint16(0, 0x4D4D); v.setUint16(2, 42); v.setUint32(4, 8);
+    const entry = (at, tag, type, count, value) => { v.setUint16(at, tag); v.setUint16(at + 2, type); v.setUint32(at + 4, count); v.setUint32(at + 8, value); };
+    v.setUint16(8, nIfd0);
+    entry(10, 0x010E, 2, d.length, descOff);           // ImageDescription
+    entry(22, 0x8825, 4, 1, gpsOff);                   // GPS IFD pointer
+    v.setUint32(34, 0);
+    v.setUint16(gpsOff, 5);
+    let e = gpsOff + 2;
+    entry(e, 0, 1, 4, 0x02030000); e += 12;            // GPSVersionID 2.3.0.0
+    entry(e, 1, 2, 2, 0); v.setUint8(e + 8, (lat < 0 ? 'S' : 'N').charCodeAt(0)); e += 12;
+    entry(e, 2, 5, 3, latOff); e += 12;
+    entry(e, 3, 2, 2, 0); v.setUint8(e + 8, (lng < 0 ? 'W' : 'E').charCodeAt(0)); e += 12;
+    entry(e, 4, 5, 3, lngOff); e += 12;
+    v.setUint32(e, 0);
+    const dms = (val, at) => {
+      val = Math.abs(val); const deg = Math.floor(val), minF = (val - deg) * 60, min = Math.floor(minF), sec = Math.round((minF - min) * 60 * 10000);
+      [[deg, 1], [min, 1], [sec, 10000]].forEach(([n, dn], k) => { v.setUint32(at + k * 8, n); v.setUint32(at + k * 8 + 4, dn); });
+    };
+    dms(lat, latOff); dms(lng, lngOff);
+    for (let i = 0; i < d.length; i++) v.setUint8(descOff + i, d.charCodeAt(i));
+    const head = new Uint8Array(10);
+    head.set([0xFF, 0xE1]); new DataView(head.buffer).setUint16(2, 8 + buf.byteLength);
+    head.set([0x45, 0x78, 0x69, 0x66, 0, 0], 4);
+    return new Blob([jpeg.slice(0, 2), head, buf, jpeg.slice(2)], { type: 'image/jpeg' });
+  }
+
+  $('#csvBtn').addEventListener('click', () => {
+    const head = ['Course', 'Hole', 'Par'];
+    S.tees.forEach(t => head.push(t + ' (yd)', t + ' (m)'));
+    S.tees.forEach(t => head.push(t + ' tee lat', t + ' tee lng', t + ' tee source'));
+    head.push('Dogleg points', 'Green lat', 'Green lng', 'Green source', 'Photos');
+    const rows = [head];
+    const totals = S.tees.map(() => 0);
+    const idx = photoIndex();
+    S.holes.forEach((h, i) => {
+      const r = [S.course, i + 1, h.par];
+      S.tees.forEach((t, k) => { const d = holeLen(h, t); if (d != null) totals[k] += d; r.push(d == null ? '' : Math.round(d * F.yd), d == null ? '' : Math.round(d)); });
+      S.tees.forEach(t => { const p = h.tees[t]; r.push(p ? p.lat.toFixed(7) : '', p ? p.lng.toFixed(7) : '', srcLabel(p)); });
+      r.push(h.way.map(p => p.lat.toFixed(7) + ' ' + p.lng.toFixed(7)).join('; '), h.green ? h.green.lat.toFixed(7) : '', h.green ? h.green.lng.toFixed(7) : '', srcLabel(h.green), idx.filter(x => x.hole === i).length || '');
+      rows.push(r);
+    });
+    const tr = [S.course, 'Total', S.holes.reduce((a, h) => a + h.par, 0)];
+    totals.forEach(d => tr.push(Math.round(d * F.yd), Math.round(d)));
+    rows.push(tr);
+    if (idx.length) {
+      rows.push([], ['PHOTO POINTS'], ['Course', 'Ref', 'Nearest hole', 'Distance from hole line (m)', 'Added on hole', 'Label', 'Lat', 'Lng', 'Location source', 'Taken', 'Photo file', 'Map link']);
+      idx.forEach(r => rows.push([S.course, r.ref, r.near ? r.near.hole + 1 : '', r.near ? Math.round(r.near.d) : '', r.added + 1, r.ph.label || '',
+        r.ph.lat != null ? r.ph.lat.toFixed(7) : '', r.ph.lng != null ? r.ph.lng.toFixed(7) : '', srcLabel(r.ph), new Date(r.ph.t).toISOString().slice(0, 16).replace('T', ' '), r.file, r.ph.lat != null ? mapsLink(r.ph) : '']));
+    }
+    download(slug() + '-scorecard.csv', rows.map(r => r.map(csvCell).join(',')).join('\r\n'), 'text/csv');
+    if (idx.length) setStatus('CSV exported with ' + idx.length + ' photo point' + (idx.length > 1 ? 's' : '') + ' and their nearest holes.');
+  });
+
+  async function shareOrDownload(files, title){
+    try { if (navigator.canShare && navigator.canShare({ files })) { await navigator.share({ files, title }); return 'shared'; } }
+    catch (err) { if (err && err.name === 'AbortError') return 'cancelled'; }
+    for (const f of files) { download(f.name, f); await new Promise(r => setTimeout(r, 400)); }
+    return 'downloaded';
+  }
+
+  $('#photosBtn').addEventListener('click', async () => {
+    const idx = photoIndex();
+    if (!idx.length) { setStatus('No photos on this course yet.'); return; }
+    setStatus('Preparing ' + idx.length + ' photo' + (idx.length > 1 ? 's' : '') + ' with GPS tags…');
+    const files = [];
+    for (const r of idx) {
+      let b = await idb.get(r.ph.id).catch(() => null); if (!b) continue;
+      if (r.ph.lat != null) b = withGps(b, r.ph.lat, r.ph.lng, (S.course ? S.course + ' - ' : '') + 'Hole ' + (r.hole + 1) + (r.ph.label ? ' - ' + r.ph.label : ''));
+      files.push(new File([b], r.file, { type: 'image/jpeg' }));
+    }
+    const how = await shareOrDownload(files, (S.course || 'Course') + ' photos');
+    if (how !== 'cancelled') setStatus(files.length + ' photo' + (files.length > 1 ? 's' : '') + ' ' + how + '. Each is named by nearest hole and carries its GPS location.');
+    else setStatus('');
+  });
+
+  // ---------- PDF report ----------
+  function loadScript(src){ return new Promise((res, rej) => { const s = document.createElement('script'); s.src = src; s.onload = res; s.onerror = () => rej(new Error('load')); document.head.appendChild(s); }); }
+  const imgSize = url => new Promise((res, rej) => { const i = new Image(); i.onload = () => res({ w: i.naturalWidth, h: i.naturalHeight }); i.onerror = rej; i.src = url; });
+  const pdfSafe = s => String(s == null ? '' : s).replace(/[→]/g, '-').replace(/[^\x20-\x7E -ÿ–—‘’“”•]/g, '?');
+
+  $('#pdfBtn').addEventListener('click', async () => {
+    const btn = $('#pdfBtn'); btn.disabled = true;
+    try {
+      setStatus('Building PDF…');
+      if (!window.jspdf) await loadScript('https://cdnjs.cloudflare.com/ajax/libs/jspdf/2.5.1/jspdf.umd.min.js');
+      const doc = new window.jspdf.jsPDF({ unit: 'mm', format: 'a4' });
+      const W = 210, H = 297, M = 15, CW = W - 2 * M;
+      const u = DB.unit, ul = u === 'yd' ? 'yd' : 'm';
+      const name = S.course.trim() || 'Untitled course';
+      const today = new Date().toLocaleDateString(undefined, { day: 'numeric', month: 'long', year: 'numeric' });
+      const idx = photoIndex();
+      let y = M;
+      const ink = () => doc.setTextColor('#15211B'), muted = () => doc.setTextColor('#5C6B63');
+      const footer = () => { const n = doc.getNumberOfPages(); for (let i = 1; i <= n; i++) { doc.setPage(i); doc.setFontSize(8); muted(); doc.text(pdfSafe(name) + ' · ' + today, M, H - 8); doc.text('Page ' + i + ' of ' + n, W - M, H - 8, { align: 'right' }); } };
+      const need = h => { if (y + h > H - 16) { doc.addPage(); y = M; return true; } return false; };
+      const hex = n => { const c = teeColour(n); return c === '#FFFFFF' ? '#E4E8E5' : c; };
+
+      // --- page 1: title + scorecard
+      doc.setFont('helvetica', 'bold'); doc.setFontSize(22); ink(); doc.text(pdfSafe(name), M, y + 8); y += 14;
+      doc.setFont('helvetica', 'normal'); doc.setFontSize(10); muted();
+      doc.text('Course measurement report · ' + today + ' · lengths in ' + (u === 'yd' ? 'yards' : 'metres'), M, y); y += 9;
+
+      const cols = ['Hole', 'Par', ...S.tees];
+      const cw = [18, 16, ...S.tees.map(() => (CW - 34) / S.tees.length)];
+      const rowH = 6.6;
+      const drawRow = (cells, opts) => {
+        let x = M;
+        if (opts.fill) { doc.setFillColor(opts.fill); doc.rect(M, y, CW, rowH, 'F'); }
+        doc.setFont('helvetica', opts.bold ? 'bold' : 'normal'); doc.setFontSize(10); ink();
+        cells.forEach((c, k) => { const right = k > 0; doc.text(pdfSafe(c), right ? x + cw[k] - 2 : x + 2, y + 4.6, { align: right ? 'right' : 'left' }); x += cw[k]; });
+        doc.setDrawColor('#D6DFDA'); doc.setLineWidth(0.2); doc.line(M, y + rowH, M + CW, y + rowH);
+        y += rowH;
+      };
+      // header with tee colour bars
+      { let x = M + cw[0] + cw[1]; S.tees.forEach((t, k) => { doc.setFillColor(hex(t)); doc.rect(x + 1, y, cw[k + 2] - 2, 1.4, 'F'); x += cw[k + 2]; }); y += 1.6; }
+      drawRow(cols.map((c, k) => k > 1 ? c + ' (' + ul + ')' : c), { bold: true });
+      const sum = (a, b, t) => { let s = 0, n = 0; for (let i = a; i < b; i++) { const d = holeLen(S.holes[i], t); if (d != null) { s += d; n++; } } return n ? fmt(s) + (n < b - a ? '*' : '') : '–'; };
+      const par = (a, b) => S.holes.slice(a, b).reduce((acc, h) => acc + h.par, 0);
+      let partial = false;
+      for (let i = 0; i < 18; i++) {
+        const h = S.holes[i];
+        drawRow([String(i + 1), String(h.par), ...S.tees.map(t => fmt(holeLen(h, t)))], { fill: i % 2 ? null : '#F3F6F4' });
+        if (i === 8) drawRow(['Out', String(par(0, 9)), ...S.tees.map(t => sum(0, 9, t))], { bold: true, fill: '#E8EFEA' });
+      }
+      drawRow(['In', String(par(9, 18)), ...S.tees.map(t => sum(9, 18, t))], { bold: true, fill: '#E8EFEA' });
+      drawRow(['Total', String(par(0, 18)), ...S.tees.map(t => sum(0, 18, t))], { bold: true, fill: '#E8EFEA' });
+      S.tees.forEach(t => S.holes.forEach(h => { if (holeLen(h, t) == null) partial = true; }));
+      y += 5; doc.setFont('helvetica', 'normal'); doc.setFontSize(8.5); muted();
+      const notes = ['Lengths are measured flat along the line of play: tee, then any dogleg points, then the centre of the green.'];
+      if (partial) notes.push('* Partial total: some holes are not yet measured for that tee.');
+      if (idx.length) notes.push(idx.length + ' photo' + (idx.length > 1 ? 's are' : ' is') + ' included with the holes they are nearest to.');
+      notes.forEach(n => { doc.text(doc.splitTextToSize(n, CW), M, y); y += 4.5; });
+
+      // --- one section per hole
+      for (let i = 0; i < 18; i++) {
+        const h = S.holes[i], photos = idx.filter(r => r.hole === i);
+        const pts = holePoints(h);
+        if (!pts.length && !photos.length) continue;
+        doc.addPage(); y = M;
+        doc.setFont('helvetica', 'bold'); doc.setFontSize(18); ink(); doc.text('Hole ' + (i + 1), M, y + 7);
+        doc.setFont('helvetica', 'normal'); doc.setFontSize(11); muted(); doc.text('Par ' + h.par, M + 32, y + 7);
+        y += 13;
+        // tee lengths
+        let x = M;
+        S.tees.forEach(t => {
+          const d = holeLen(h, t);
+          doc.setFillColor(hex(t)); doc.circle(x + 2, y - 1.3, 1.8, 'F'); if (teeColour(t) === '#FFFFFF') { doc.setDrawColor('#8A9A91'); doc.circle(x + 2, y - 1.3, 1.8, 'S'); }
+          doc.setFont('helvetica', 'bold'); doc.setFontSize(11); ink();
+          const txt = t + ': ' + (d == null ? '–' : fmt(d) + ' ' + ul);
+          doc.text(pdfSafe(txt), x + 5.5, y); x += doc.getTextWidth(pdfSafe(txt)) + 14;
+        });
+        y += 4;
+        if (h.way.length) { doc.setFont('helvetica', 'normal'); doc.setFontSize(9); muted(); doc.text('Via ' + h.way.length + ' dogleg point' + (h.way.length > 1 ? 's' : '') + ' to the green centre.', M, y + 3); y += 5; }
+        y += 2;
+
+        // diagram of the hole (north up)
+        const all = [...pts, ...photos.filter(r => r.ph.lat != null).map(r => r.ph)];
+        if (all.length) {
+          const boxH = 85; need(boxH + 4);
+          doc.setDrawColor('#D6DFDA'); doc.setFillColor('#F3F6F4'); doc.roundedRect(M, y, CW, boxH, 2, 2, 'FD');
+          const o = all[0], xy = all.map(p => localXY(p, o));
+          const minX = Math.min(...xy.map(p => p.x)), maxX = Math.max(...xy.map(p => p.x)), minY = Math.min(...xy.map(p => p.y)), maxY = Math.max(...xy.map(p => p.y));
+          const pad = 10, spanX = Math.max(maxX - minX, 20), spanY = Math.max(maxY - minY, 20);
+          const sc = Math.min((CW - 2 * pad) / spanX, (boxH - 2 * pad) / spanY);
+          const cx = M + CW / 2, cy = y + boxH / 2, mx = (minX + maxX) / 2, my = (minY + maxY) / 2;
+          const P = p => { const q = localXY(p, o); return [cx + (q.x - mx) * sc, cy - (q.y - my) * sc]; };
+          const shared = [...h.way, h.green].filter(Boolean);
+          doc.setLineWidth(0.8);
+          for (let k = 1; k < shared.length; k++) { doc.setDrawColor('#C9A227'); const a = P(shared[k-1]), b = P(shared[k]); doc.line(a[0], a[1], b[0], b[1]); }
+          S.tees.forEach(t => { const tp = h.tees[t]; if (tp && shared.length) { doc.setDrawColor(teeColour(t) === '#FFFFFF' ? '#8A9A91' : teeColour(t)); const a = P(tp), b = P(shared[0]); doc.line(a[0], a[1], b[0], b[1]); } });
+          const dotLabel = (p, fill, txt, txtCol, r) => { const [px, py] = P(p); doc.setFillColor(fill); doc.setDrawColor('#15211B'); doc.setLineWidth(0.25); doc.circle(px, py, r, 'FD'); doc.setFont('helvetica', 'bold'); doc.setFontSize(7); doc.setTextColor(txtCol); doc.text(txt, px, py + 0.9, { align: 'center' }); };
+          photos.forEach(r => { if (r.ph.lat == null) return; const [px, py] = P(r.ph); doc.setFillColor('#7B4FB0'); doc.setDrawColor('#FFFFFF'); doc.roundedRect(px - 3.6, py - 2.2, 7.2, 4.4, 0.8, 0.8, 'FD'); doc.setFont('helvetica', 'bold'); doc.setFontSize(6); doc.setTextColor('#FFFFFF'); doc.text(r.ref, px, py + 0.8, { align: 'center' }); });
+          S.tees.forEach(t => { if (h.tees[t]) dotLabel(h.tees[t], hex(t), (t[0] || 'T').toUpperCase(), teeInk(t), 2.6); });
+          h.way.forEach((p, k) => dotLabel(p, '#2F6FB3', String(k + 1), '#FFFFFF', 2.4));
+          if (h.green) dotLabel(h.green, '#1E8A4C', 'G', '#FFFFFF', 2.8);
+          // north arrow + scale bar
+          doc.setDrawColor('#15211B'); doc.setLineWidth(0.4); doc.line(M + CW - 8, y + 12, M + CW - 8, y + 5); doc.line(M + CW - 8, y + 5, M + CW - 9.5, y + 7); doc.line(M + CW - 8, y + 5, M + CW - 6.5, y + 7);
+          doc.setFont('helvetica', 'bold'); doc.setFontSize(7); ink(); doc.text('N', M + CW - 8, y + 15.5, { align: 'center' });
+          const target = (CW / 4) / sc; const steps = [5, 10, 20, 25, 50, 100, 200, 250, 500]; const sm = steps.reduce((a, b) => Math.abs(b - target) < Math.abs(a - target) ? b : a);
+          const sl = sm * sc; doc.setLineWidth(0.6); doc.line(M + 5, y + boxH - 5, M + 5 + sl, y + boxH - 5); doc.line(M + 5, y + boxH - 6.2, M + 5, y + boxH - 3.8); doc.line(M + 5 + sl, y + boxH - 6.2, M + 5 + sl, y + boxH - 3.8);
+          doc.setFont('helvetica', 'normal'); doc.setFontSize(7); doc.text(sm + ' m', M + 5 + sl / 2, y + boxH - 7, { align: 'center' });
+          y += boxH + 5;
+        }
+
+        // point table
+        const prow = [];
+        S.tees.forEach(t => { if (h.tees[t]) prow.push([t + ' tee', h.tees[t]]); });
+        h.way.forEach((p, k) => prow.push(['Dogleg point ' + (k + 1), p]));
+        if (h.green) prow.push(['Green centre', h.green]);
+        if (prow.length) {
+          need(6 + prow.length * 5);
+          doc.setFont('helvetica', 'bold'); doc.setFontSize(9); ink(); doc.text('Point', M, y); doc.text('Latitude', M + 50, y); doc.text('Longitude', M + 85, y); doc.text('Source', M + 120, y); y += 4.5;
+          doc.setFont('helvetica', 'normal');
+          prow.forEach(([n, p]) => { need(5); ink(); doc.text(pdfSafe(n), M, y); doc.text(p.lat.toFixed(6), M + 50, y); doc.text(p.lng.toFixed(6), M + 85, y); muted(); doc.text(pdfSafe(srcLabel(p)), M + 120, y); y += 4.6; });
+          y += 3;
+        }
+
+        // photos, two per row
+        if (photos.length) {
+          need(12);
+          doc.setFont('helvetica', 'bold'); doc.setFontSize(12); ink(); doc.text('Photos', M, y + 4); y += 8;
+          const colW = (CW - 6) / 2;
+          for (let k = 0; k < photos.length; k += 2) {
+            const pair = photos.slice(k, k + 2);
+            const items = [];
+            for (const r of pair) {
+              const url = await photoUrl(r.ph.id).catch(() => null); if (!url) { items.push(null); continue; }
+              const sz = await imgSize(url);
+              const blob = await idb.get(r.ph.id);
+              const data = await blobToDataUrl(blob);
+              const iw = colW, ih = Math.min(colW * sz.h / sz.w, 95), w2 = ih * sz.w / sz.h;
+              items.push({ r, data, w: Math.min(iw, w2), h: ih });
+            }
+            const capH = 22, rowHgt = Math.max(...items.map(it => it ? it.h : 0)) + capH;
+            need(rowHgt);
+            items.forEach((it, c) => {
+              if (!it) return;
+              const x0 = M + c * (colW + 6);
+              doc.addImage(it.data, 'JPEG', x0, y, it.w, it.h, undefined, 'FAST');
+              let ty = y + it.h + 4.5;
+              const r = it.r;
+              doc.setFont('helvetica', 'bold'); doc.setFontSize(9); ink(); doc.text(pdfSafe(r.ref + (r.ph.label ? ' · ' + r.ph.label : '')), x0, ty, { maxWidth: colW }); ty += 4.2;
+              doc.setFont('helvetica', 'normal'); doc.setFontSize(8); muted();
+              const lines = [];
+              if (r.near) lines.push('Nearest hole ' + (r.near.hole + 1) + ' · ' + Math.round(r.near.d) + ' m from line of play' + (r.added !== r.hole ? ' (added on hole ' + (r.added + 1) + ')' : ''));
+              else lines.push('No location · added on hole ' + (r.added + 1));
+              if (r.ph.lat != null) lines.push(r.ph.lat.toFixed(6) + ', ' + r.ph.lng.toFixed(6) + ' · ' + srcLabel(r.ph));
+              lines.push(new Date(r.ph.t).toLocaleString(undefined, { day: 'numeric', month: 'short', year: 'numeric', hour: '2-digit', minute: '2-digit' }));
+              lines.forEach(l => { doc.text(pdfSafe(l), x0, ty, { maxWidth: colW }); ty += 3.8; });
+              if (r.ph.lat != null) { doc.setTextColor('#1E5A3F'); doc.textWithLink('Open in Google Maps', x0, ty, { url: mapsLink(r.ph) }); }
+            });
+            y += rowHgt + 4;
+          }
+        }
+      }
+      footer();
+      const blob = doc.output('blob');
+      const file = new File([blob], slug() + '-report.pdf', { type: 'application/pdf' });
+      const how = await shareOrDownload([file], name + ' report');
+      setStatus(how === 'cancelled' ? '' : 'PDF report ' + how + (idx.length ? ' with ' + idx.length + ' photo' + (idx.length > 1 ? 's' : '') : '') + '.');
+    } catch (err) {
+      setStatus(err && err.message === 'load' ? 'Couldn\'t load the PDF tool. Check your internet connection and try again.' : 'Couldn\'t build the PDF.', true);
+      console.error(err);
+    } finally { btn.disabled = false; }
+  });
+
+  $('#bakBtn').addEventListener('click', async () => {
+    setStatus('Preparing backup…');
+    const photos = {};
+    for (const h of S.holes) for (const ph of (h.photos || [])) { const b = await idb.get(ph.id).catch(() => null); if (b) photos[ph.id] = await blobToDataUrl(b); }
+    download(slug() + '-backup.json', JSON.stringify({ app: 'course-measure', version: 2, course: S, photos }), 'application/json');
+    setStatus('Backup saved' + (Object.keys(photos).length ? ' with ' + Object.keys(photos).length + ' photo' + (Object.keys(photos).length > 1 ? 's' : '') : '') + '.');
+  });
+  $('#resBtn').addEventListener('click', () => $('#resFile').click());
+  $('#resFile').addEventListener('change', async e => {
+    const f = e.target.files[0]; e.target.value = ''; if (!f) return;
+    try {
+      const d = JSON.parse(await f.text());
+      const src = d && d.app === 'course-measure' ? d.course : d; // version 1 backups were the bare course
+      if (!validCourse(src)) throw new Error('bad');
+      setStatus('Restoring…');
+      const c = normCourse({ id: uid(), course: src.course || '', tees: src.tees, tee: src.tee, hole: src.hole, holes: src.holes });
+      if (DB.order.some(id => DB.courses[id].course.trim() === c.course.trim())) c.course = (c.course || 'Course') + ' (restored)';
+      const photos = (d && d.photos) || {};
+      for (const h of c.holes) {
+        const kept = [];
+        for (const ph of h.photos) { if (!photos[ph.id]) continue; const nid = uid(); await idb.put(nid, await dataUrlToBlob(photos[ph.id])); kept.push(Object.assign({}, ph, { id: nid })); }
+        h.photos = kept;
+      }
+      DB.courses[c.id] = c; DB.order.push(c.id);
+      switchCourse(c.id, 'Restored ' + (c.course || 'course') + ' as a separate course.');
+    } catch(err) { setStatus('That file isn\'t a Course Measure backup.', true); }
+  });
+
+  initMap();
+  if (!window.isSecureContext) setStatus('Open this page from an https:// address so GPS can work.', true);
+  render();
+})();
+</script>
+</body>
+</html>
